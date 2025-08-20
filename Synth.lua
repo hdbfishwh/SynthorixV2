@@ -158,19 +158,6 @@ local Window = WindUI:CreateWindow({
     -- },
 })
 
-Window:Tag({
-    Title = "v1.6.4",
-    Color = Color3.fromHex("#30ff6a")
-})
-Window:Tag({
-    Title = "Beta",
-    Color = Color3.fromHex("#315dff")
-})
-local TimeTag = Window:Tag({
-    Title = "00:00",
-    Color = Color3.fromHex("#000000")
-})
-
 local hue = 0
 
 task.spawn(function()
