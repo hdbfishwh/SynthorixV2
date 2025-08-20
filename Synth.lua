@@ -8,7 +8,7 @@ WindUI:Localization({
         ["en"] = {
             ["WINDUI_EXAMPLE"] = "Synth",
             ["WELCOME"] = "Welcome to Synth!",
-            ["LIB_DESC"] = "Beautiful UI library for Roblox",
+            ["LIB_DESC"] = "FreemPrem",
             ["SETTINGS"] = "Settings",
             ["APPEARANCE"] = "Appearance",
             ["FEATURES"] = "Features",
