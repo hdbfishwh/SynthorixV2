@@ -7,7 +7,7 @@ WindUI:Localization({
     Translations = {
         ["en"] = {
             ["WINDUI_EXAMPLE"] = "Synth",
-            ["WELCOME"] = "Welcome to Synth!",
+            ["WELCOME"] = "FreePrem Fiture",
             ["LIB_DESC"] = "FreemPrem",
             ["SETTINGS"] = "Settings",
             ["APPEARANCE"] = "Appearance",
@@ -186,7 +186,7 @@ Window:CreateTopbarButton("theme-switcher", "moon", function()
 end, 990)
 
 local Tabs = {
-    Main = Window:Section({ Title = "loc:FEATURES", Opened = true }),
+    Main = Window:Section({ Title = "loc:Main", Opened = true }),
     Settings = Window:Section({ Title = "loc:SETTINGS", Opened = true }),
     Utilities = Window:Section({ Title = "loc:UTILITIES", Opened = true })
 }
@@ -213,12 +213,7 @@ local featureToggle = TabHandles.Elements:Toggle({
     Desc = "Unlocks additional functionality",
     Value = false,
     Callback = function(state) 
-        toggleState = state
-        WindUI:Notify({
-            Title = "Features",
-            Content = state and "Features Enabled" or "Features Disabled",
-            Icon = state and "check" or "x",
-            Duration = 2
+        print ("Activated")
         })
     end
 })
