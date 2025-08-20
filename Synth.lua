@@ -5,24 +5,9 @@ WindUI:Localization({
     Prefix = "loc:",
     DefaultLanguage = "en",
     Translations = {
-        ["ru"] = {
-            ["WINDUI_EXAMPLE"] = "WindUI Пример",
-            ["WELCOME"] = "Добро пожаловать в WindUI!",
-            ["LIB_DESC"] = "Библиотека для создания красивых интерфейсов",
-            ["SETTINGS"] = "Настройки",
-            ["APPEARANCE"] = "Внешний вид",
-            ["FEATURES"] = "Функционал",
-            ["UTILITIES"] = "Инструменты",
-            ["UI_ELEMENTS"] = "UI Элементы",
-            ["CONFIGURATION"] = "Конфигурация",
-            ["SAVE_CONFIG"] = "Сохранить конфигурацию",
-            ["LOAD_CONFIG"] = "Загрузить конфигурацию",
-            ["THEME_SELECT"] = "Выберите тему",
-            ["TRANSPARENCY"] = "Прозрачность окна"
-        },
         ["en"] = {
-            ["WINDUI_EXAMPLE"] = "WindUI Example",
-            ["WELCOME"] = "Welcome to WindUI!",
+            ["WINDUI_EXAMPLE"] = "Synth",
+            ["WELCOME"] = "Welcome to Synth!",
             ["LIB_DESC"] = "Beautiful UI library for Roblox",
             ["SETTINGS"] = "Settings",
             ["APPEARANCE"] = "Appearance",
