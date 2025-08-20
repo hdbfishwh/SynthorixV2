@@ -213,7 +213,12 @@ local featureToggle = TabHandles.Elements:Toggle({
     Desc = "Unlocks additional functionality",
     Value = false,
     Callback = function(state) 
-        print ("Activated")
+        toggleState = state
+        WindUI:Notify({
+            Title = "Features",
+            Content = state and "Features Enabled" or "Features Disabled",
+            Icon = state and "check" or "x",
+            Duration = 2
         })
     end
 })
