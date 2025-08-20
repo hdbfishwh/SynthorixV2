@@ -186,7 +186,7 @@ Window:CreateTopbarButton("theme-switcher", "moon", function()
 end, 990)
 
 local Tabs = {
-    Main = Window:Section({ Title = "loc:Main", Opened = true }),
+    Main = Window:Section({ Title = "loc:FEATURES", Opened = true }),
     Settings = Window:Section({ Title = "loc:SETTINGS", Opened = true }),
     Utilities = Window:Section({ Title = "loc:UTILITIES", Opened = true })
 }
