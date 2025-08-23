@@ -15,7 +15,7 @@ WindUI:Localization({
             ["APPEARANCE"] = "Appearance",
             ["FEATURES"] = "Features",
             ["UTILITIES"] = "Utilities",
-            ["UI_ELEMENTS"] = "UI Elements",
+            ["UI_ELEMENTS"] = "Main",
             ["CONFIGURATION"] = "Configuration",
             ["SAVE_CONFIG"] = "Save Configuration",
             ["LOAD_CONFIG"] = "Load Configuration",
