@@ -1,19 +1,32 @@
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/hdbfishwh/SynthorixV2/refs/heads/main/Theme.lua"))()
 
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- Dapatkan username pemain
+local playerName = LocalPlayer.Name
+local displayName = LocalPlayer.DisplayName
+
 WindUI:Localization({
     Enabled = true,
     Prefix = "loc:",
     DefaultLanguage = "en",
     Translations = {
         ["en"] = {
-            ["WINDUI_EXAMPLE"] = "Synth",
-            ["WELCOME"] = "FreePrem",
-            ["LIB_DESC"] = "Hello Dear User, thank for using my script",
+            ["WINDUI_EXAMPLE"] = "ZAINS",
+            ["WELCOME"] = "2 player development",
+            ["LIB_DESC"] = "Hello " .. displayName .. ", thank you for using our script :)",
             ["SETTINGS"] = "Settings",
             ["APPEARANCE"] = "Appearance",
             ["FEATURES"] = "Features",
             ["UTILITIES"] = "Utilities",
-            ["UI_ELEMENTS"] = "Main",
+            ["UI_ELEMENTS"] = "UI Elements",
             ["CONFIGURATION"] = "Configuration",
             ["SAVE_CONFIG"] = "Save Configuration",
             ["LOAD_CONFIG"] = "Load Configuration",
@@ -23,7 +36,7 @@ WindUI:Localization({
     }
 })
 
-WindUI.TransparencyValue = 0.2
+WindUI.TransparencyValue = 0.10
 WindUI:SetTheme("Dark")
 
 local function gradient(text, startColor, endColor)
@@ -51,15 +64,6 @@ WindUI:Popup({
         }
     }
 })
-
--- Services
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local CoreGui = game:GetService("CoreGui")
-local Camera = workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
 
 -- Configuration
 local Config = {
@@ -247,17 +251,19 @@ FOVCircle.Color = Color3.new(1, 1, 1)
 local Window = WindUI:CreateWindow({
     Title = "loc:WINDUI_EXAMPLE",
     Icon = "palette",
-    Author = "loc:WELCOME",
+    Author = "loc:WELCOME",  -- Ini akan menampilkan username pemain
     Folder = "WindUI_Example",
     Size = UDim2.fromOffset(580, 490),
     Theme = "Dark",
     User = {
         Enabled = true,
-        Anonymous = true,
+        Anonymous = false,  -- Diubah menjadi false
+        Username = playerName,  -- Menampilkan username
+        UserId = LocalPlayer.UserId,  -- Menampilkan UserId
         Callback = function()
             WindUI:Notify({
                 Title = "User Profile",
-                Content = "User profile clicked!",
+                Content = "Hello, " .. displayName .. "! (ID: " .. LocalPlayer.UserId .. ")",
                 Duration = 3
             })
         end
@@ -511,7 +517,7 @@ TabHandles.Config:Button({
     Callback = function()
         WindUI:Notify({ 
             Title = "Configuration", 
-            Content = "Settings saved!",
+            Content = "Settings saved for " .. playerName .. "!",
             Icon = "check",
             Duration = 3
         })
@@ -524,7 +530,7 @@ TabHandles.Config:Button({
     Callback = function()
         WindUI:Notify({ 
             Title = "Configuration", 
-            Content = "Settings loaded!",
+            Content = "Settings loaded for " .. playerName .. "!",
             Icon = "refresh-cw",
             Duration = 3
         })
@@ -613,11 +619,11 @@ end)
 local function ShowWelcomeNotification()
     WindUI:Notify({
         Title = "Script Loaded",
-        Content = "ESP and Aimbot features are ready!",
+        Content = "Welcome, " .. displayName .. "! ESP and Aimbot features are ready!",
         Icon = "check",
         Duration = 5
     })
 end
 
 ShowWelcomeNotification()
-warn("✅ Script successfully activated with WindUI!")
+warn("✅ Script successfully activated for " .. playerName .. "!")
