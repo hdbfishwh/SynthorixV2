@@ -19,8 +19,8 @@ WindUI:Localization({
     DefaultLanguage = "en",
     Translations = {
         ["en"] = {
-            ["WINDUI_EXAMPLE"] = "ZAINS",
-            ["WELCOME"] = "2 player development",
+            ["WINDUI_EXAMPLE"] = "Synthorix",
+            ["WELCOME"] = "Universal AimBot",
             ["LIB_DESC"] = "Hello " .. displayName .. ", thank you for using our script :)",
             ["SETTINGS"] = "Settings",
             ["APPEARANCE"] = "Appearance",
