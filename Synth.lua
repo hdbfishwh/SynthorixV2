@@ -19,9 +19,9 @@ WindUI:Localization({
     DefaultLanguage = "en",
     Translations = {
         ["en"] = {
-            ["WINDUI_EXAMPLE"] = "Synthorix",
-            ["WELCOME"] = "Universal AimBot",
-            ["LIB_DESC"] = "Hello " .. displayName .. ", thank you for using our script :)",
+            ["WINDUI_EXAMPLE"] = "Synth",
+            ["WELCOME"] = "UniversalAimbot by Synth",
+            ["LIB_DESC"] = "Hello " .. displayName .. ", thank you for using our script",
             ["SETTINGS"] = "Settings",
             ["APPEARANCE"] = "Appearance",
             ["FEATURES"] = "Features",
@@ -36,7 +36,8 @@ WindUI:Localization({
     }
 })
 
-WindUI.TransparencyValue = 0.10
+-- SET TRANSPARENCY TO 0.50 IMMEDIATELY
+WindUI.TransparencyValue = 0.50
 WindUI:SetTheme("Dark")
 
 local function gradient(text, startColor, endColor)
@@ -52,8 +53,8 @@ local function gradient(text, startColor, endColor)
 end
 
 WindUI:Popup({
-    Title = gradient("WindUI Demo", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
-    Icon = "sparkles",
+    Title = gradient("PARAGON", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
+    Icon = "logo",
     Content = "loc:LIB_DESC",
     Buttons = {
         {
@@ -71,6 +72,7 @@ local Config = {
         Enabled = false,
         BoxColor = Color3.new(1, 0.3, 0),
         DistanceColor = Color3.new(1, 1, 1),
+        UsernameColor = Color3.new(1, 1, 1),
         HealthGradient = {
             Color3.new(0, 1, 0),
             Color3.new(1, 1, 0),
@@ -78,20 +80,27 @@ local Config = {
         },
         SnaplineEnabled = true,
         SnaplinePosition = "Center",
-        RainbowEnabled = false
+        RainbowEnabled = false,
+        ShowUsername = true
     },
     Aimbot = {
         Enabled = false,
         FOV = 30,
         MaxDistance = 200,
         ShowFOV = false,
-        TargetPart = "Head"
+        TargetPart = "Head",
+        BigHead = {
+            Enabled = false,
+            Size = 15
+        }
     }
 }
 
 -- Variables
 local RainbowSpeed = 0.5
 local ESPDrawings = {}
+local BigHeadEnabled = Config.Aimbot.BigHead.Enabled
+local BigHeadSize = Config.Aimbot.BigHead.Size
 
 -- Functions
 local function CreateESP(player)
@@ -101,6 +110,7 @@ local function CreateESP(player)
         Box = Drawing.new("Square"),
         HealthBar = Drawing.new("Square"),
         Distance = Drawing.new("Text"),
+        Username = Drawing.new("Text"),
         Snapline = Drawing.new("Line")
     }
     
@@ -117,6 +127,12 @@ local function CreateESP(player)
     drawings.Distance.Size = 16
     drawings.Distance.Center = true
     drawings.Distance.Color = Config.ESP.DistanceColor
+    
+    drawings.Username.Size = 16
+    drawings.Username.Center = true
+    drawings.Username.Color = Config.ESP.UsernameColor
+    drawings.Username.Text = player.Name
+    
     drawings.Snapline.Color = Config.ESP.BoxColor
     
     ESPDrawings[player] = drawings
@@ -177,15 +193,26 @@ local function UpdateESP(player, drawings)
     drawings.Distance.Position = Vector2.new(headPos.X, headPos.Y + (scale * 0.75) + 10)
     drawings.Distance.Visible = true
     
+    -- Username
+    if Config.ESP.ShowUsername then
+        drawings.Username.Text = player.Name
+        drawings.Username.Position = Vector2.new(headPos.X, headPos.Y - (scale * 0.75) - 20)
+        drawings.Username.Visible = true
+    else
+        drawings.Username.Visible = false
+    end
+    
     -- Rainbow effect
     if Config.ESP.RainbowEnabled then
         local hue = (tick() * RainbowSpeed) % 1
         local rainbowColor = Color3.fromHSV(hue, 1, 1)
         drawings.Snapline.Color = rainbowColor
         drawings.Box.Color = rainbowColor
+        drawings.Username.Color = rainbowColor
     else
         drawings.Snapline.Color = Config.ESP.BoxColor
         drawings.Box.Color = Config.ESP.BoxColor
+        drawings.Username.Color = Config.ESP.UsernameColor
     end
     
     -- Snapline
@@ -248,18 +275,37 @@ FOVCircle.Filled = false
 FOVCircle.Visible = Config.Aimbot.ShowFOV
 FOVCircle.Color = Color3.new(1, 1, 1)
 
+-- Big Head Function
+local function UpdateBigHead()
+    if not BigHeadEnabled then return end
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            pcall(function()
+                local head = player.Character.Head
+                head.Size = Vector3.new(BigHeadSize, BigHeadSize, BigHeadSize)
+                head.Transparency = 1
+                head.BrickColor = BrickColor.new("Red")
+                head.Material = "Neon"
+                head.CanCollide = false
+                head.Massless = true
+            end)
+        end
+    end
+end
+
 local Window = WindUI:CreateWindow({
     Title = "loc:WINDUI_EXAMPLE",
-    Icon = "palette",
-    Author = "loc:WELCOME",  -- Ini akan menampilkan username pemain
+    Icon = "logo",
+    Author = "loc:WELCOME",
     Folder = "WindUI_Example",
-    Size = UDim2.fromOffset(580, 490),
+    Size = UDim2.fromOffset(200, 200),
     Theme = "Dark",
     User = {
         Enabled = true,
-        Anonymous = false,  -- Diubah menjadi false
-        Username = playerName,  -- Menampilkan username
-        UserId = LocalPlayer.UserId,  -- Menampilkan UserId
+        Anonymous = false,
+        Username = playerName,
+        UserId = LocalPlayer.UserId,
         Callback = function()
             WindUI:Notify({
                 Title = "User Profile",
@@ -269,6 +315,7 @@ local Window = WindUI:CreateWindow({
         end
     },
     SideBarWidth = 200,
+    Transparency = 0.50  -- FORCE TRANSPARENCY HERE TOO
 })
 
 Window:CreateTopbarButton("theme-switcher", "moon", function()
@@ -276,7 +323,6 @@ Window:CreateTopbarButton("theme-switcher", "moon", function()
     WindUI:Notify({
         Title = "Theme Changed",
         Content = "Current theme: "..WindUI:GetCurrentTheme(),
-        Duration = 2
     })
 end, 990)
 
@@ -287,7 +333,7 @@ local Tabs = {
 }
 
 local TabHandles = {
-    ESP = Tabs.Main:Tab({ Title = "ESP", Icon = "eye", Desc = "ESP Settings" }),
+    ESP = Tabs.Main:Tab({ Title = "ESP", Icon = "eye" }),
     Aimbot = Tabs.Main:Tab({ Title = "Aimbot", Icon = "crosshair" }),
     Appearance = Tabs.Settings:Tab({ Title = "loc:APPEARANCE", Icon = "brush" }),
     Config = Tabs.Utilities:Tab({ Title = "loc:CONFIGURATION", Icon = "settings" })
@@ -303,15 +349,52 @@ TabHandles.ESP:Paragraph({
 
 TabHandles.ESP:Divider()
 
+-- Toggle untuk ESP
 local espToggle = TabHandles.ESP:Toggle({
     Title = "Enable ESP",
     Desc = "Toggle ESP on/off",
     Value = Config.ESP.Enabled,
     Callback = function(state) 
         Config.ESP.Enabled = state
+        
+        -- Jika ESP dimatikan, sembunyikan semua drawing
+        if not state then
+            for _, drawings in pairs(ESPDrawings) do
+                for _, drawing in pairs(drawings) do
+                    drawing.Visible = false
+                end
+            end
+        end
+        
         WindUI:Notify({
             Title = "ESP",
             Content = state and "ESP Enabled" or "ESP Disabled",
+            Icon = state and "check" or "x",
+            Duration = 2
+        })
+    end
+})
+
+-- Toggle untuk menampilkan username
+local usernameToggle = TabHandles.ESP:Toggle({
+    Title = "Show Username",
+    Desc = "Toggle username display on/off",
+    Value = Config.ESP.ShowUsername,
+    Callback = function(state) 
+        Config.ESP.ShowUsername = state
+        
+        -- Jika username dimatikan, sembunyikan semua username drawing
+        if not state then
+            for _, drawings in pairs(ESPDrawings) do
+                if drawings.Username then
+                    drawings.Username.Visible = false
+                end
+            end
+        end
+        
+        WindUI:Notify({
+            Title = "Username ESP",
+            Content = state and "Username Display Enabled" or "Username Display Disabled",
             Icon = state and "check" or "x",
             Duration = 2
         })
@@ -370,6 +453,19 @@ TabHandles.ESP:Colorpicker({
         WindUI:Notify({
             Title = "ESP Color",
             Content = "Color changed",
+            Duration = 2
+        })
+    end
+})
+
+TabHandles.ESP:Colorpicker({
+    Title = "Username Color",
+    Default = Config.ESP.UsernameColor,
+    Callback = function(color, transparency)
+        Config.ESP.UsernameColor = color
+        WindUI:Notify({
+            Title = "Username Color",
+            Content = "Username color changed",
             Duration = 2
         })
     end
@@ -448,6 +544,46 @@ local targetPart = TabHandles.Aimbot:Dropdown({
     end
 })
 
+local bigHeadToggle = TabHandles.Aimbot:Toggle({
+    Title = "Big Head",
+    Desc = "Make enemy heads bigger",
+    Value = Config.Aimbot.BigHead.Enabled,
+    Callback = function(state) 
+        Config.Aimbot.BigHead.Enabled = state
+        BigHeadEnabled = state
+        
+        if not state then
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+                    pcall(function()
+                        player.Character.Head.Size = Vector3.new(2, 1, 1)
+                        player.Character.Head.Transparency = 0
+                        player.Character.Head.BrickColor = BrickColor.new("Pastel brown")
+                        player.Character.Head.Material = "Plastic"
+                    end)
+                end
+            end
+        end
+        
+        WindUI:Notify({
+            Title = "Big Head",
+            Content = state and "Big Head Enabled" or "Big Head Disabled",
+            Icon = state and "check" or "x",
+            Duration = 2
+        })
+    end
+})
+
+local bigHeadSlider = TabHandles.Aimbot:Slider({
+    Title = "Head Size",
+    Desc = "Adjust head size",
+    Value = { Min = 5, Max = 50, Default = Config.Aimbot.BigHead.Size },
+    Callback = function(value)
+        Config.Aimbot.BigHead.Size = value
+        BigHeadSize = value
+    end
+})
+
 TabHandles.Appearance:Paragraph({
     Title = "Customize Interface",
     Desc = "Personalize your experience",
@@ -482,12 +618,20 @@ local transparencySlider = TabHandles.Appearance:Slider({
     Value = { 
         Min = 0,
         Max = 1,
-        Default = 0.2,
+        Default = 0.50,  -- Default diubah jadi 0.50
     },
     Step = 0.1,
     Callback = function(value)
         Window:ToggleTransparency(tonumber(value) > 0)
         WindUI.TransparencyValue = tonumber(value)
+        
+        -- Force refresh UI
+        task.wait(0.1)
+        if Window.Enabled then
+            Window.Enabled = false
+            task.wait(0.1)
+            Window.Enabled = true
+        end
     end
 })
 
@@ -537,6 +681,20 @@ TabHandles.Config:Button({
     end
 })
 
+-- APPLY TRANSPARENCY IMMEDIATELY AFTER WINDOW CREATION
+task.spawn(function()
+    task.wait(1) -- Tunggu window selesai dibuat
+    Window:ToggleTransparency(true)
+    WindUI.TransparencyValue = 0.50
+    
+    -- Force refresh UI
+    if Window.Enabled then
+        Window.Enabled = false
+        task.wait(0.1)
+        Window.Enabled = true
+    end
+end)
+
 -- Main Loop
 RunService.RenderStepped:Connect(function()
     -- Update FOV Circle
@@ -564,6 +722,9 @@ RunService.RenderStepped:Connect(function()
             Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character[Config.Aimbot.TargetPart].Position)
         end
     end
+    
+    -- Update Big Head
+    UpdateBigHead()
 end)
 
 -- Initialize ESP for all players
