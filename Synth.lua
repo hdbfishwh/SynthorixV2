@@ -21,7 +21,7 @@ WindUI:Localization({
         ["en"] = {
             ["WINDUI_EXAMPLE"] = "Synth [Beta]",
             ["WELCOME"] = "UniversalAimbot by Synth",
-            ["LIB_DESC"] = "Hello " .. displayName .. ", this script still ahs allot of bug please report it to my discord server to fix the bug",
+            ["LIB_DESC"] = "Hello " .. displayName .. ", this script still has allot of bug please report it to my discord server to fix the bug",
             ["SETTINGS"] = "Settings",
             ["APPEARANCE"] = "Appearance",
             ["FEATURES"] = "Features",
