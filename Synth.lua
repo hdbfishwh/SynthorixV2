@@ -21,7 +21,7 @@ WindUI:Localization({
         ["en"] = {
             ["WINDUI_EXAMPLE"] = "Synth [Beta]",
             ["WELCOME"] = "UniversalAimbot by Synth",
-            ["LIB_DESC"] = "Hello " .. displayName .. ", thank you for using our script",
+            ["LIB_DESC"] = "Hello " .. displayName .. ", this script still ahs allot of bug please report it to my discord server to fix the bug",
             ["SETTINGS"] = "Settings",
             ["APPEARANCE"] = "Appearance",
             ["FEATURES"] = "Features",
@@ -56,7 +56,7 @@ local function gradient(text, startColor, endColor)
 end
 
 WindUI:Popup({
-    Title = gradient("PARAGON", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
+    Title = gradient("Synth [Beta]", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
     Icon = "logo",
     Content = "loc:LIB_DESC",
     Buttons = {
