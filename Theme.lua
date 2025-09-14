@@ -35,7 +35,7 @@ h.SetIconsType"lucide"
 local i
 
 local j={
-Font="rbxassetid://114302815800612",
+Font="rbxassetid://99055441546319",
 Localization=nil,
 CanDraggable=true,
 Theme=nil,
