@@ -64,7 +64,7 @@ end
 
 WindUI:Popup({
     Title = gradient("Synth [Beta]", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
-    Icon = customLogo, -- Use custom logo here
+    Icon = 111308654185180, -- Use custom logo here
     Content = "loc:LIB_DESC",
     Buttons = {
         {
@@ -592,7 +592,7 @@ local fovSlider = TabHandles.Aimbot:Slider({
 
 local distanceSlider = TabHandles.Aimbot:Slider({
     Title = "Max Distance",
-    Desc = "Adjust maximum target distance",
+    Desc = "Don't adjust the distance there a bug",
     Value = { Min = 10, Max = 1000, Default = Config.Aimbot.MaxDistance },
     Callback = function(value)
         Config.Aimbot.MaxDistance = value
