@@ -45,7 +45,7 @@ WindUI:SetTheme("Dark")
 
 -- Create custom logo
 local function CreateCustomLogo()
-    return "rbxassetid://99055441546319"
+    return "rbxassetid://111308654185180"
 end
 
 local customLogo = CreateCustomLogo()
@@ -336,7 +336,7 @@ end
 
 local Window = WindUI:CreateWindow({
     Title = "loc:WINDUI_EXAMPLE",
-    Icon = customLogo, -- Use custom logo here
+    Icon = 111308654185180, -- Use custom logo here
     Author = "loc:WELCOME",
     Folder = "WindUI_Example",
     Size = UDim2.fromOffset(200, 200),
