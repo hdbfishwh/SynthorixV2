@@ -19,7 +19,7 @@ WindUI:Localization({
     DefaultLanguage = "en",
     Translations = {
         ["en"] = {
-            ["WINDUI_EXAMPLE"] = "Synth",
+            ["WINDUI_EXAMPLE"] = "Synth [Beta]",
             ["WELCOME"] = "UniversalAimbot by Synth",
             ["LIB_DESC"] = "Hello " .. displayName .. ", thank you for using our script",
             ["SETTINGS"] = "Settings",
