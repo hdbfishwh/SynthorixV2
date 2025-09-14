@@ -31,7 +31,10 @@ WindUI:Localization({
             ["SAVE_CONFIG"] = "Save Configuration",
             ["LOAD_CONFIG"] = "Load Configuration",
             ["THEME_SELECT"] = "Select Theme",
-            ["TRANSPARENCY"] = "Window Transparency"
+            ["TRANSPARENCY"] = "Window Transparency",
+            ["DISCORD"] = "Discord Server",
+            ["JOIN_DISCORD"] = "Join Our Discord",
+            ["DISCORD_DESC"] = "Join our Discord community for updates, support, and more!"
         }
     }
 })
@@ -294,6 +297,36 @@ local function UpdateBigHead()
     end
 end
 
+-- Function to open Discord link
+local function OpenDiscord()
+    local discordUrl = "https://discord.gg/ckc8gFGuT7" -- Replace with your actual Discord invite link
+    WindUI:Notify({
+        Title = "Discord",
+        Content = "Opening Discord invite link...",
+        Icon = "external-link",
+        Duration = 3
+    })
+    
+    -- Try to open the link
+    pcall(function()
+        if syn then
+            syn.request({
+                Url = discordUrl,
+                Method = "GET"
+            })
+        else
+            -- Fallback for other executors
+            setclipboard(discordUrl)
+            WindUI:Notify({
+                Title = "Discord",
+                Content = "Link copied to clipboard!",
+                Icon = "copy",
+                Duration = 5
+            })
+        end
+    end)
+end
+
 local Window = WindUI:CreateWindow({
     Title = "loc:WINDUI_EXAMPLE",
     Icon = "logo",
@@ -329,15 +362,43 @@ end, 990)
 local Tabs = {
     Main = Window:Section({ Title = "loc:FEATURES", Opened = true }),
     Settings = Window:Section({ Title = "loc:SETTINGS", Opened = true }),
-    Utilities = Window:Section({ Title = "loc:UTILITIES", Opened = true })
+    Utilities = Window:Section({ Title = "loc:UTILITIES", Opened = true }),
+    Discord = Window:Section({ Title = "loc:DISCORD", Opened = true }) -- New Discord section
 }
 
 local TabHandles = {
     ESP = Tabs.Main:Tab({ Title = "ESP", Icon = "eye" }),
     Aimbot = Tabs.Main:Tab({ Title = "Aimbot", Icon = "crosshair" }),
     Appearance = Tabs.Settings:Tab({ Title = "loc:APPEARANCE", Icon = "brush" }),
-    Config = Tabs.Utilities:Tab({ Title = "loc:CONFIGURATION", Icon = "settings" })
+    Config = Tabs.Utilities:Tab({ Title = "loc:CONFIGURATION", Icon = "settings" }),
+    DiscordTab = Tabs.Discord:Tab({ Title = "loc:DISCORD", Icon = "message-circle" }) -- New Discord tab
 }
+
+-- Add Discord section content
+TabHandles.DiscordTab:Paragraph({
+    Title = "Join Our Community",
+    Desc = "loc:DISCORD_DESC",
+    Image = "users",
+    ImageSize = 20,
+    Color = Color3.fromHex("#5865F2") -- Discord brand color
+})
+
+TabHandles.DiscordTab:Divider()
+
+TabHandles.DiscordTab:Button({
+    Title = "loc:JOIN_DISCORD",
+    Icon = "discord",
+    Variant = "Primary",
+    Callback = OpenDiscord
+})
+
+TabHandles.DiscordTab:Paragraph({
+    Title = "Benefits of Joining",
+    Desc = "• Get script updates\n• Request features\n• Report bugs\n• Get support\n• Share your experiences",
+    Image = "star",
+    ImageSize = 20,
+    Color = Color3.fromHex("#FFD700")
+})
 
 TabHandles.ESP:Paragraph({
     Title = "ESP Settings",
