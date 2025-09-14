@@ -1,4 +1,4 @@
-here help me put the id Roblox logo i create here the script Roblox Logo Id: 99055441546319
+--here help me put the id Roblox logo i create here the script Roblox Logo Id: 99055441546319
 
 --[[
      _      ___         ____  ______
