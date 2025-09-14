@@ -385,7 +385,7 @@ local TabHandles = {
 TabHandles.ESP:Paragraph({
     Title = "ESP Settings",
     Desc = "Configure your ESP features",
-    Image = customLogo, -- Use custom logo here
+    Image = 111308654185180, -- Use custom logo here
     ImageSize = 64, -- Larger size for the logo
     Color = Color3.fromHex("#30ff6a"),
 })
@@ -656,7 +656,7 @@ local bigHeadSlider = TabHandles.Aimbot:Slider({
 TabHandles.Appearance:Paragraph({
     Title = "Customize Interface",
     Desc = "Personalize your experience",
-    Image = customLogo, -- Use custom logo here
+    Image = 111308654185180, -- Use custom logo here
     ImageSize = 64,
     Color = "White"
 })
@@ -707,7 +707,7 @@ local transparencySlider = TabHandles.Appearance:Slider({
 TabHandles.Config:Paragraph({
     Title = "Configuration Manager",
     Desc = "Save and load your settings",
-    Image = customLogo, -- Use custom logo here
+    Image = 111308654185180, -- Use custom logo here
     ImageSize = 64,
     Color = "White"
 })
