@@ -43,6 +43,13 @@ WindUI:Localization({
 WindUI.TransparencyValue = 0.50
 WindUI:SetTheme("Dark")
 
+-- Create custom logo
+local function CreateCustomLogo()
+    return "rbxassetid://99055441546319"
+end
+
+local customLogo = CreateCustomLogo()
+
 local function gradient(text, startColor, endColor)
     local result = ""
     for i = 1, #text do
@@ -57,7 +64,7 @@ end
 
 WindUI:Popup({
     Title = gradient("Synth [Beta]", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
-    Icon = "logo",
+    Icon = customLogo, -- Use custom logo here
     Content = "loc:LIB_DESC",
     Buttons = {
         {
@@ -299,7 +306,7 @@ end
 
 -- Function to open Discord link
 local function OpenDiscord()
-    local discordUrl = "https://discord.gg/ckc8gFGuT7" -- Replace with your actual Discord invite link
+    local discordUrl = "https://discord.gg/ckc8gFGuT7"
     WindUI:Notify({
         Title = "Discord",
         Content = "Opening Discord invite link...",
@@ -326,14 +333,6 @@ local function OpenDiscord()
         end
     end)
 end
-
--- Create custom logo
-local function CreateCustomLogo()
-    local logo = "rbxassetid://99055441546319"
-    return logo
-end
-
-local customLogo = CreateCustomLogo()
 
 local Window = WindUI:CreateWindow({
     Title = "loc:WINDUI_EXAMPLE",
@@ -382,12 +381,23 @@ local TabHandles = {
     DiscordTab = Tabs.Discord:Tab({ Title = "loc:DISCORD", Icon = "message-circle" }) -- New Discord tab
 }
 
+-- Add a custom logo to the main section
+TabHandles.ESP:Paragraph({
+    Title = "ESP Settings",
+    Desc = "Configure your ESP features",
+    Image = customLogo, -- Use custom logo here
+    ImageSize = 64, -- Larger size for the logo
+    Color = Color3.fromHex("#30ff6a"),
+})
+
+TabHandles.ESP:Divider()
+
 -- Add Discord section content
 TabHandles.DiscordTab:Paragraph({
     Title = "Join Our Community",
     Desc = "loc:DISCORD_DESC",
-    Image = "users",
-    ImageSize = 20,
+    Image = customLogo, -- Use custom logo here too
+    ImageSize = 64,
     Color = Color3.fromHex("#5865F2") -- Discord brand color
 })
 
@@ -407,16 +417,6 @@ TabHandles.DiscordTab:Paragraph({
     ImageSize = 20,
     Color = Color3.fromHex("#FFD700")
 })
-
-TabHandles.ESP:Paragraph({
-    Title = "ESP Settings",
-    Desc = "Configure your ESP features",
-    Image = "eye",
-    ImageSize = 20,
-    Color = Color3.fromHex("#30ff6a"),
-})
-
-TabHandles.ESP:Divider()
 
 -- Toggle untuk ESP
 local espToggle = TabHandles.ESP:Toggle({
@@ -543,8 +543,8 @@ TabHandles.ESP:Colorpicker({
 TabHandles.Aimbot:Paragraph({
     Title = "Aimbot Settings",
     Desc = "Configure your aimbot features",
-    Image = "crosshair",
-    ImageSize = 20,
+    Image = customLogo, -- Use custom logo here
+    ImageSize = 64,
     Color = Color3.fromHex("#ff3030"),
 })
 
@@ -656,8 +656,8 @@ local bigHeadSlider = TabHandles.Aimbot:Slider({
 TabHandles.Appearance:Paragraph({
     Title = "Customize Interface",
     Desc = "Personalize your experience",
-    Image = "palette",
-    ImageSize = 20,
+    Image = customLogo, -- Use custom logo here
+    ImageSize = 64,
     Color = "White"
 })
 
@@ -707,8 +707,8 @@ local transparencySlider = TabHandles.Appearance:Slider({
 TabHandles.Config:Paragraph({
     Title = "Configuration Manager",
     Desc = "Save and load your settings",
-    Image = "save",
-    ImageSize = 20,
+    Image = customLogo, -- Use custom logo here
+    ImageSize = 64,
     Color = "White"
 })
 
