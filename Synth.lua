@@ -64,7 +64,7 @@ end
 
 WindUI:Popup({
     Title = gradient("Synth [Beta]", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
-    Icon = 111308654185180, -- Use custom logo here
+    Icon = customLogo, -- Use custom logo here
     Content = "loc:LIB_DESC",
     Buttons = {
         {
