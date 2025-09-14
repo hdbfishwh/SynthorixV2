@@ -327,9 +327,17 @@ local function OpenDiscord()
     end)
 end
 
+-- Create custom logo
+local function CreateCustomLogo()
+    local logo = "rbxassetid://99055441546319"
+    return logo
+end
+
+local customLogo = CreateCustomLogo()
+
 local Window = WindUI:CreateWindow({
     Title = "loc:WINDUI_EXAMPLE",
-    Icon = "logo",
+    Icon = customLogo, -- Use custom logo here
     Author = "loc:WELCOME",
     Folder = "WindUI_Example",
     Size = UDim2.fromOffset(200, 200),
