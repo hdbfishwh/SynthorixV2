@@ -336,7 +336,7 @@ end
 
 local Window = WindUI:CreateWindow({
     Title = "loc:WINDUI_EXAMPLE",
-    Icon = 111308654185180, -- Use custom logo here
+    Icon = "rbxassetid://111308654185180", -- FIXED: Use full format here
     Author = "loc:WELCOME",
     Folder = "WindUI_Example",
     Size = UDim2.fromOffset(200, 200),
@@ -385,7 +385,7 @@ local TabHandles = {
 TabHandles.ESP:Paragraph({
     Title = "ESP Settings",
     Desc = "Configure your ESP features",
-    Image = 111308654185180, -- Use custom logo here
+    Image = "rbxassetid://111308654185180", -- FIXED: Use full format here
     ImageSize = 64, -- Larger size for the logo
     Color = Color3.fromHex("#30ff6a"),
 })
@@ -396,7 +396,7 @@ TabHandles.ESP:Divider()
 TabHandles.DiscordTab:Paragraph({
     Title = "Join Our Community",
     Desc = "loc:DISCORD_DESC",
-    Image = customLogo, -- Use custom logo here too
+    Image = "rbxassetid://111308654185180", -- FIXED: Use full format here
     ImageSize = 64,
     Color = Color3.fromHex("#5865F2") -- Discord brand color
 })
@@ -543,7 +543,7 @@ TabHandles.ESP:Colorpicker({
 TabHandles.Aimbot:Paragraph({
     Title = "Aimbot Settings",
     Desc = "Configure your aimbot features",
-    Image = customLogo, -- Use custom logo here
+    Image = "rbxassetid://111308654185180", -- FIXED: Use full format here
     ImageSize = 64,
     Color = Color3.fromHex("#ff3030"),
 })
@@ -624,7 +624,7 @@ local bigHeadToggle = TabHandles.Aimbot:Toggle({
         if not state then
             for _, player in ipairs(Players:GetPlayers()) do
                 if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                    pcall(function()
+                    pcall(function())
                         player.Character.Head.Size = Vector3.new(2, 1, 1)
                         player.Character.Head.Transparency = 0
                         player.Character.Head.BrickColor = BrickColor.new("Pastel brown")
@@ -656,7 +656,7 @@ local bigHeadSlider = TabHandles.Aimbot:Slider({
 TabHandles.Appearance:Paragraph({
     Title = "Customize Interface",
     Desc = "Personalize your experience",
-    Image = 111308654185180, -- Use custom logo here
+    Image = "rbxassetid://111308654185180", -- FIXED: Use full format here
     ImageSize = 64,
     Color = "White"
 })
@@ -707,7 +707,7 @@ local transparencySlider = TabHandles.Appearance:Slider({
 TabHandles.Config:Paragraph({
     Title = "Configuration Manager",
     Desc = "Save and load your settings",
-    Image = 111308654185180, -- Use custom logo here
+    Image = "rbxassetid://111308654185180", -- FIXED: Use full format here
     ImageSize = 64,
     Color = "White"
 })
