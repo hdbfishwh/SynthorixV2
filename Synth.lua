@@ -13,58 +13,6 @@ local LocalPlayer = Players.LocalPlayer
 local playerName = LocalPlayer.Name
 local displayName = LocalPlayer.DisplayName
 
--- Create Synth Logo with Red Circle
-local function CreateSynthLogo()
-    local logoGui = Instance.new("ScreenGui")
-    logoGui.Name = "SynthLogoGui"
-    logoGui.Parent = game.CoreGui
-    logoGui.ResetOnSpawn = false
-    logoGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-    -- Create the red circle background
-    local circle = Instance.new("Frame")
-    circle.Name = "RedCircle"
-    circle.Parent = logoGui
-    circle.Size = UDim2.new(0, 100, 0, 100)
-    circle.Position = UDim2.new(0, 20, 0, 20)
-    circle.AnchorPoint = Vector2.new(0, 0)
-    circle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    circle.BorderSizePixel = 0
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(1, 0)
-    corner.Parent = circle
-    
-    -- Add Synth text
-    local synthText = Instance.new("TextLabel")
-    synthText.Name = "SynthText"
-    synthText.Parent = circle
-    synthText.Size = UDim2.new(0.8, 0, 0.5, 0)
-    synthText.Position = UDim2.new(0.1, 0, 0.2, 0)
-    synthText.BackgroundTransparency = 1
-    synthText.Text = "Synth"
-    synthText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    synthText.TextScaled = true
-    synthText.Font = Enum.Font.GothamBold
-    
-    -- Add Beta text
-    local betaText = Instance.new("TextLabel")
-    betaText.Name = "BetaText"
-    betaText.Parent = circle
-    betaText.Size = UDim2.new(0.6, 0, 0.3, 0)
-    betaText.Position = UDim2.new(0.2, 0, 0.6, 0)
-    betaText.BackgroundTransparency = 1
-    betaText.Text = "[Beta]"
-    betaText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    betaText.TextScaled = true
-    betaText.Font = Enum.Font.Gotham
-    
-    return logoGui
-end
-
--- Create the logo
-CreateSynthLogo()
-
 WindUI:Localization({
     Enabled = true,
     Prefix = "loc:",
@@ -116,7 +64,7 @@ end
 
 WindUI:Popup({
     Title = gradient("Synth [Beta]", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
-    Icon = 111308654185180, -- Use custom logo here
+    Icon = "rbxassetid://111308654185180", -- FIXED: Use full format here
     Content = "loc:LIB_DESC",
     Buttons = {
         {
