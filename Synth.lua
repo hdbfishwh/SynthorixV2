@@ -112,14 +112,6 @@ local ESPDrawings = {}
 local BigHeadEnabled = Config.Aimbot.BigHead.Enabled
 local BigHeadSize = Config.Aimbot.BigHead.Size
 
--- FOV Circle
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Thickness = 2
-FOVCircle.NumSides = 100
-FOVCircle.Filled = false
-FOVCircle.Visible = Config.Aimbot.ShowFOV
-FOVCircle.Color = Color3.new(1, 1, 1)
-
 -- Functions
 local function CreateESP(player)
     if player == LocalPlayer then return end
@@ -285,6 +277,14 @@ local function FindAimbotTarget()
     return closestTarget
 end
 
+-- FOV Circle
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 2
+FOVCircle.NumSides = 100
+FOVCircle.Filled = false
+FOVCircle.Visible = Config.Aimbot.ShowFOV
+FOVCircle.Color = Color3.new(1, 1, 1)
+
 -- Big Head Function
 local function UpdateBigHead()
     if not BigHeadEnabled then return end
@@ -332,36 +332,6 @@ local function OpenDiscord()
             })
         end
     end)
-end
-
--- Cleanup function for when player leaves
-local function Cleanup()
-    -- Clean up ESP drawings
-    for _, drawings in pairs(ESPDrawings) do
-        for _, drawing in pairs(drawings) do
-            pcall(function()
-                drawing:Remove()
-            end)
-        end
-    end
-    ESPDrawings = {}
-    
-    -- Clean up FOV circle
-    pcall(function()
-        FOVCircle:Remove()
-    end)
-    
-    -- Reset Big Head for all players
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-            pcall(function()
-                player.Character.Head.Size = Vector3.new(2, 1, 1)
-                player.Character.Head.Transparency = 0
-                player.Character.Head.BrickColor = BrickColor.new("Pastel brown")
-                player.Character.Head.Material = "Plastic"
-            end)
-        end
-    end
 end
 
 local Window = WindUI:CreateWindow({
@@ -654,7 +624,7 @@ local bigHeadToggle = TabHandles.Aimbot:Toggle({
         if not state then
             for _, player in ipairs(Players:GetPlayers()) do
                 if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                    pcall(function()
+                    pcall(function())
                         player.Character.Head.Size = Vector3.new(2, 1, 1)
                         player.Character.Head.Transparency = 0
                         player.Character.Head.BrickColor = BrickColor.new("Pastel brown")
@@ -795,8 +765,7 @@ task.spawn(function()
 end)
 
 -- Main Loop
-local renderConnection
-renderConnection = RunService.RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function()
     -- Update FOV Circle
     FOVCircle.Visible = Config.Aimbot.ShowFOV
     FOVCircle.Radius = (Config.Aimbot.FOV / 2) * (Camera.ViewportSize.Y / 90)
@@ -881,32 +850,10 @@ local function ShowWelcomeNotification()
     WindUI:Notify({
         Title = "Script Loaded",
         Content = "Welcome, " .. displayName .. "! ESP and Aimbot features are ready!",
-        Icon = "check",
+    Icon = "check",
         Duration = 5
     })
 end
 
 ShowWelcomeNotification()
 warn("✅ Script successfully activated for " .. playerName .. "!")
-
--- Cleanup when player leaves
-LocalPlayer.CharacterRemoving:Connect(function()
-    Cleanup()
-end)
-
-game:BindToClose(function()
-    Cleanup()
-end)
-
--- Also cleanup if the script is stopped manually
-local function onScriptStopped()
-    Cleanup()
-    if renderConnection then
-        renderConnection:Disconnect()
-    end
-end
-
--- Store the original script cleanup
-if not getgenv then getgenv = function() return _G end end
-local oldEnv = getgenv()
-oldEnv.SynthScriptCleanup = onScriptStopped
