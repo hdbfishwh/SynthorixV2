@@ -1,4 +1,18 @@
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/hdbfishwh/SynthorixV2/refs/heads/main/Theme.lua"))()
+-- Load WindUI with error handling
+local WindUI, loadError
+local success = pcall(function()
+    WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/hdbfishwh/SynthorixV2/refs/heads/main/Theme.lua"))()
+end)
+
+if not WindUI or not success then
+    warn("Failed to load WindUI library: " .. tostring(loadError))
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Script Error",
+        Text = "Failed to load UI library. Please try again.",
+        Duration = 5
+    })
+    return
+end
 
 -- Services
 local Players = game:GetService("Players")
@@ -7,12 +21,24 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 local Camera = workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
 
--- Dapatkan username pemain
+-- Wait for player to load
+local LocalPlayer = Players.LocalPlayer
+if not LocalPlayer then
+    LocalPlayer = Players.PlayerAdded:Wait()
+end
+
+-- Wait for character to load
+repeat wait() until LocalPlayer.Character
+
+-- Get player info with safety checks
 local playerName = LocalPlayer.Name
 local displayName = LocalPlayer.DisplayName
+if displayName == "" then
+    displayName = playerName
+end
 
+-- Apply localization
 WindUI:Localization({
     Enabled = true,
     Prefix = "loc:",
@@ -44,11 +70,7 @@ WindUI.TransparencyValue = 0.50
 WindUI:SetTheme("Dark")
 
 -- Create custom logo
-local function CreateCustomLogo()
-    return "rbxassetid://111308654185180"
-end
-
-local customLogo = CreateCustomLogo()
+local customLogo = "rbxassetid://111308654185180"
 
 local function gradient(text, startColor, endColor)
     local result = ""
@@ -62,19 +84,22 @@ local function gradient(text, startColor, endColor)
     return result
 end
 
-WindUI:Popup({
-    Title = gradient("Synth [Beta]", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
-    Icon = "rbxassetid://111308654185180", -- FIXED: Use full format here
-    Content = "loc:LIB_DESC",
-    Buttons = {
-        {
-            Title = "Get Started",
-            Icon = "arrow-right",
-            Variant = "Primary",
-            Callback = function() end
+-- Show popup with error handling
+pcall(function()
+    WindUI:Popup({
+        Title = gradient("Synth [Beta]", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
+        Icon = customLogo,
+        Content = "loc:LIB_DESC",
+        Buttons = {
+            {
+                Title = "Get Started",
+                Icon = "arrow-right",
+                Variant = "Primary",
+                Callback = function() end
+            }
         }
-    }
-})
+    })
+end)
 
 -- Configuration
 local Config = {
@@ -252,18 +277,17 @@ local function FindAimbotTarget()
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
             local head = player.Character.Head
-            local direction = (head.Position - Camera.CFrame.Position).Unit
-            local lookVector = Camera.CFrame.LookVector
-            local angle = math.deg(math.acos(direction:Dot(lookVector)))
+            local headPos, onScreen = Camera:WorldToViewportPoint(head.Position)
             
-            if angle <= (fov / 2) then
-                local distance = (Camera.CFrame.Position - head.Position).Magnitude
+            if onScreen then
+                local direction = (head.Position - Camera.CFrame.Position).Unit
+                local lookVector = Camera.CFrame.LookVector
+                local angle = math.deg(math.acos(direction:Dot(lookVector)))
                 
-                if distance <= Config.Aimbot.MaxDistance then
-                    local ray = Ray.new(Camera.CFrame.Position, direction * 500)
-                    local hitPart, _ = workspace:FindPartOnRay(ray, LocalPlayer.Character)
+                if angle <= (fov / 2) then
+                    local distance = (Camera.CFrame.Position - head.Position).Magnitude
                     
-                    if hitPart and hitPart:IsDescendantOf(player.Character) then
+                    if distance <= Config.Aimbot.MaxDistance then
                         if distance < closestDistance then
                             closestDistance = distance
                             closestTarget = player
@@ -294,11 +318,25 @@ local function UpdateBigHead()
             pcall(function()
                 local head = player.Character.Head
                 head.Size = Vector3.new(BigHeadSize, BigHeadSize, BigHeadSize)
-                head.Transparency = 1
+                head.Transparency = 0.5
                 head.BrickColor = BrickColor.new("Red")
                 head.Material = "Neon"
                 head.CanCollide = false
-                head.Massless = true
+            end)
+        end
+    end
+end
+
+-- Function to reset head sizes
+local function ResetHeadSizes()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            pcall(function()
+                local head = player.Character.Head
+                head.Size = Vector3.new(2, 1, 1)
+                head.Transparency = 0
+                head.BrickColor = BrickColor.new("Pastel brown")
+                head.Material = "Plastic"
             end)
         end
     end
@@ -334,29 +372,38 @@ local function OpenDiscord()
     end)
 end
 
-local Window = WindUI:CreateWindow({
-    Title = "loc:WINDUI_EXAMPLE",
-    Icon = "rbxassetid://111308654185180", -- FIXED: Use full format here
-    Author = "loc:WELCOME",
-    Folder = "WindUI_Example",
-    Size = UDim2.fromOffset(200, 200),
-    Theme = "Dark",
-    User = {
-        Enabled = true,
-        Anonymous = false,
-        Username = playerName,
-        UserId = LocalPlayer.UserId,
-        Callback = function()
-            WindUI:Notify({
-                Title = "User Profile",
-                Content = "Hello, " .. displayName .. "! (ID: " .. LocalPlayer.UserId .. ")",
-                Duration = 3
-            })
-        end
-    },
-    SideBarWidth = 200,
-    Transparency = 0.50  -- FORCE TRANSPARENCY HERE TOO
-})
+-- Create window with error handling
+local Window
+pcall(function()
+    Window = WindUI:CreateWindow({
+        Title = "loc:WINDUI_EXAMPLE",
+        Icon = customLogo,
+        Author = "loc:WELCOME",
+        Folder = "WindUI_Example",
+        Size = UDim2.fromOffset(200, 200),
+        Theme = "Dark",
+        User = {
+            Enabled = true,
+            Anonymous = false,
+            Username = playerName,
+            UserId = LocalPlayer.UserId,
+            Callback = function()
+                WindUI:Notify({
+                    Title = "User Profile",
+                    Content = "Hello, " .. displayName .. "! (ID: " .. LocalPlayer.UserId .. ")",
+                    Duration = 3
+                })
+            end
+        },
+        SideBarWidth = 200,
+        Transparency = 0.50
+    })
+end)
+
+if not Window then
+    warn("Failed to create WindUI window")
+    return
+end
 
 Window:CreateTopbarButton("theme-switcher", "moon", function()
     WindUI:SetTheme(WindUI:GetCurrentTheme() == "Dark" and "Light" or "Dark")
@@ -370,7 +417,7 @@ local Tabs = {
     Main = Window:Section({ Title = "loc:FEATURES", Opened = true }),
     Settings = Window:Section({ Title = "loc:SETTINGS", Opened = true }),
     Utilities = Window:Section({ Title = "loc:UTILITIES", Opened = true }),
-    Discord = Window:Section({ Title = "loc:DISCORD", Opened = true }) -- New Discord section
+    Discord = Window:Section({ Title = "loc:DISCORD", Opened = true })
 }
 
 local TabHandles = {
@@ -378,15 +425,15 @@ local TabHandles = {
     Aimbot = Tabs.Main:Tab({ Title = "Aimbot", Icon = "crosshair" }),
     Appearance = Tabs.Settings:Tab({ Title = "loc:APPEARANCE", Icon = "brush" }),
     Config = Tabs.Utilities:Tab({ Title = "loc:CONFIGURATION", Icon = "settings" }),
-    DiscordTab = Tabs.Discord:Tab({ Title = "loc:DISCORD", Icon = "message-circle" }) -- New Discord tab
+    DiscordTab = Tabs.Discord:Tab({ Title = "loc:DISCORD", Icon = "message-circle" })
 }
 
 -- Add a custom logo to the main section
 TabHandles.ESP:Paragraph({
     Title = "ESP Settings",
     Desc = "Configure your ESP features",
-    Image = "rbxassetid://111308654185180", -- FIXED: Use full format here
-    ImageSize = 64, -- Larger size for the logo
+    Image = customLogo,
+    ImageSize = 64,
     Color = Color3.fromHex("#30ff6a"),
 })
 
@@ -396,9 +443,9 @@ TabHandles.ESP:Divider()
 TabHandles.DiscordTab:Paragraph({
     Title = "Join Our Community",
     Desc = "loc:DISCORD_DESC",
-    Image = "rbxassetid://111308654185180", -- FIXED: Use full format here
+    Image = customLogo,
     ImageSize = 64,
-    Color = Color3.fromHex("#5865F2") -- Discord brand color
+    Color = Color3.fromHex("#5865F2")
 })
 
 TabHandles.DiscordTab:Divider()
@@ -543,7 +590,7 @@ TabHandles.ESP:Colorpicker({
 TabHandles.Aimbot:Paragraph({
     Title = "Aimbot Settings",
     Desc = "Configure your aimbot features",
-    Image = "rbxassetid://111308654185180", -- FIXED: Use full format here
+    Image = customLogo,
     ImageSize = 64,
     Color = Color3.fromHex("#ff3030"),
 })
@@ -622,16 +669,7 @@ local bigHeadToggle = TabHandles.Aimbot:Toggle({
         BigHeadEnabled = state
         
         if not state then
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                    pcall(function())
-                        player.Character.Head.Size = Vector3.new(2, 1, 1)
-                        player.Character.Head.Transparency = 0
-                        player.Character.Head.BrickColor = BrickColor.new("Pastel brown")
-                        player.Character.Head.Material = "Plastic"
-                    end)
-                end
-            end
+            ResetHeadSizes()
         end
         
         WindUI:Notify({
@@ -656,7 +694,7 @@ local bigHeadSlider = TabHandles.Aimbot:Slider({
 TabHandles.Appearance:Paragraph({
     Title = "Customize Interface",
     Desc = "Personalize your experience",
-    Image = "rbxassetid://111308654185180", -- FIXED: Use full format here
+    Image = customLogo,
     ImageSize = 64,
     Color = "White"
 })
@@ -687,7 +725,7 @@ local transparencySlider = TabHandles.Appearance:Slider({
     Value = { 
         Min = 0,
         Max = 1,
-        Default = 0.50,  -- Default diubah jadi 0.50
+        Default = 0.50,
     },
     Step = 0.1,
     Callback = function(value)
@@ -707,13 +745,12 @@ local transparencySlider = TabHandles.Appearance:Slider({
 TabHandles.Config:Paragraph({
     Title = "Configuration Manager",
     Desc = "Save and load your settings",
-    Image = "rbxassetid://111308654185180", -- FIXED: Use full format here
+    Image = customLogo,
     ImageSize = 64,
     Color = "White"
 })
 
 local configName = "default"
-local configFile = nil
 
 TabHandles.Config:Input({
     Title = "Config Name",
@@ -749,52 +786,6 @@ TabHandles.Config:Button({
         })
     end
 })
-
--- APPLY TRANSPARENCY IMMEDIATELY AFTER WINDOW CREATION
-task.spawn(function()
-    task.wait(1) -- Tunggu window selesai dibuat
-    Window:ToggleTransparency(true)
-    WindUI.TransparencyValue = 0.50
-    
-    -- Force refresh UI
-    if Window.Enabled then
-        Window.Enabled = false
-        task.wait(0.1)
-        Window.Enabled = true
-    end
-end)
-
--- Main Loop
-RunService.RenderStepped:Connect(function()
-    -- Update FOV Circle
-    FOVCircle.Visible = Config.Aimbot.ShowFOV
-    FOVCircle.Radius = (Config.Aimbot.FOV / 2) * (Camera.ViewportSize.Y / 90)
-    FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-    
-    -- Rainbow effect for FOV Circle
-    if Config.ESP.RainbowEnabled and Config.Aimbot.ShowFOV then
-        local hue = (tick() * RainbowSpeed) % 1
-        FOVCircle.Color = Color3.fromHSV(hue, 1, 1)
-    elseif Config.Aimbot.ShowFOV then
-        FOVCircle.Color = Color3.new(1, 1, 1)
-    end
-    
-    -- Update ESP for all players
-    for player, drawings in pairs(ESPDrawings) do
-        UpdateESP(player, drawings)
-    end
-    
-    -- Aimbot functionality
-    if Config.Aimbot.Enabled then
-        local target = FindAimbotTarget()
-        if target and target.Character and target.Character:FindFirstChild(Config.Aimbot.TargetPart) then
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character[Config.Aimbot.TargetPart].Position)
-        end
-    end
-    
-    -- Update Big Head
-    UpdateBigHead()
-end)
 
 -- Initialize ESP for all players
 for _, player in ipairs(Players:GetPlayers()) do
@@ -836,6 +827,40 @@ Players.PlayerRemoving:Connect(function(player)
     end
 end)
 
+-- Main Loop
+local renderConnection
+renderConnection = RunService.RenderStepped:Connect(function()
+    -- Update FOV Circle
+    FOVCircle.Visible = Config.Aimbot.ShowFOV
+    FOVCircle.Radius = (Config.Aimbot.FOV / 2) * (Camera.ViewportSize.Y / 90)
+    FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    
+    -- Rainbow effect for FOV Circle
+    if Config.ESP.RainbowEnabled and Config.Aimbot.ShowFOV then
+        local hue = (tick() * RainbowSpeed) % 1
+        FOVCircle.Color = Color3.fromHSV(hue, 1, 1)
+    elseif Config.Aimbot.ShowFOV then
+        FOVCircle.Color = Color3.new(1, 1, 1)
+    end
+    
+    -- Update ESP for all players
+    for player, drawings in pairs(ESPDrawings) do
+        UpdateESP(player, drawings)
+    end
+    
+    -- Aimbot functionality
+    if Config.Aimbot.Enabled and LocalPlayer.Character then
+        local target = FindAimbotTarget()
+        if target and target.Character and target.Character:FindFirstChild(Config.Aimbot.TargetPart) then
+            local targetPart = target.Character[Config.Aimbot.TargetPart]
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
+        end
+    end
+    
+    -- Update Big Head
+    UpdateBigHead()
+end)
+
 -- UI Toggle
 local UIVisible = true
 UserInputService.InputBegan:Connect(function(input)
@@ -850,10 +875,33 @@ local function ShowWelcomeNotification()
     WindUI:Notify({
         Title = "Script Loaded",
         Content = "Welcome, " .. displayName .. "! ESP and Aimbot features are ready!",
-    Icon = "check",
+        Icon = "check",
         Duration = 5
     })
 end
 
 ShowWelcomeNotification()
 warn("✅ Script successfully activated for " .. playerName .. "!")
+
+-- Cleanup on script termination
+game:GetService("Players").PlayerRemoving:Connect(function(player)
+    if player == LocalPlayer then
+        -- Clean up drawings
+        for _, drawings in pairs(ESPDrawings) do
+            for _, drawing in pairs(drawings) do
+                pcall(function() drawing:Remove() end)
+            end
+        end
+        
+        -- Reset head sizes
+        ResetHeadSizes()
+        
+        -- Remove FOV circle
+        pcall(function() FOVCircle:Remove() end)
+        
+        -- Disconnect render connection
+        if renderConnection then
+            renderConnection:Disconnect()
+        end
+    end
+end)
