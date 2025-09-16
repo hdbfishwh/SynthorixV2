@@ -486,7 +486,7 @@ if TabHandles.YahayukMountTab and TabHandles.YahayukMountTab.Paragraph then
     local Checkpoints = {
         {Position = Vector3.new(-427.83, 249.41, 787.53), Delay = 0},    -- Cp1 (instant)
         {Position = Vector3.new(-369.21, 388.41, 532.46), Delay = 11},   -- Cp2 (11 sec)
-        {Position = Vector3.new(260.72, 429.41, 502.61), Delay = 11},    -- Cp3 (11 sec)
+        {Position = Vector3.new(295.76, 430.90, 498.47), Delay = 11},    -- Cp3 (11 sec)
         {Position = Vector3.new(333.99, 490.07, 342.65), Delay = 11},    -- Cp4 (11 sec)
         {Position = Vector3.new(217.10, 314.41, -144.75), Delay = 11},   -- Cp5 (11 sec)
         {Position = Vector3.new(-630.59, 905.15, -502.97), Delay = 11},  -- Win (11 sec)
