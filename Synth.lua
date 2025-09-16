@@ -490,7 +490,6 @@ if TabHandles.YahayukMountTab and TabHandles.YahayukMountTab.Paragraph then
         {Position = Vector3.new(326.37, 490.41, 365.25), Delay = 11},    -- Cp4 (11 sec)
         {Position = Vector3.new(217.37, 314.41, -144.41), Delay = 11},   -- Cp5 (11 sec)
         {Position = Vector3.new(-630.59, 905.15, -502.97), Delay = 11},  -- Win (11 sec)
-        {Position = Vector3.new(-640.53, 910.94, -503.54), Delay = 1}    -- Last (1 sec)
     }
 
     -- Variables for Yahayuk Mount
@@ -532,10 +531,10 @@ if TabHandles.YahayukMountTab and TabHandles.YahayukMountTab.Paragraph then
             end
             
             -- Reset character and restart the loop if still enabled
-            if YahayukMountEnabled then
-                ResetCharacter()
-                wait(3) -- Wait for character to respawn
-            end
+            --if YahayukMountEnabled then
+               -- ResetCharacter()
+               -- wait(3) -- Wait for character to respawn
+           -- end
         end)
     end
 
