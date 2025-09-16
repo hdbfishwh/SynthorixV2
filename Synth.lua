@@ -416,7 +416,8 @@ local Tabs = {
     Main = Window:Section({ Title = "Features", Opened = true }),
     Settings = Window:Section({ Title = "Settings", Opened = true }),
     Utilities = Window:Section({ Title = "Utilities", Opened = true }),
-    Discord = Window:Section({ Title = "Discord", Opened = true })
+    Discord = Window:Section({ Title = "Discord", Opened = true }),
+    YahayukMount = Window:Section({ Title = "Yahayuk Mount", Opened = true }) -- Add this line
 }
 
 local TabHandles = {
@@ -424,7 +425,8 @@ local TabHandles = {
     Aimbot = Tabs.Main:Tab({ Title = "Aimbot", Icon = "crosshair" }),
     Appearance = Tabs.Settings:Tab({ Title = "Appearance", Icon = "brush" }),
     Config = Tabs.Utilities:Tab({ Title = "Configuration", Icon = "settings" }),
-    DiscordTab = Tabs.Discord:Tab({ Title = "Discord", Icon = "message-circle" })
+    DiscordTab = Tabs.Discord:Tab({ Title = "Discord", Icon = "message-circle" }),
+    YahayukMountTab = Tabs.YahayukMount:Tab({ Title = "Yahayuk Mount", Icon = "map-pinned" }) -- Add this line
 }
 
 -- Add a custom logo to the main section
@@ -465,6 +467,138 @@ if TabHandles.DiscordTab and TabHandles.DiscordTab.Paragraph then
         Image = "star",
         ImageSize = 20,
         Color = Color3.fromHex("#FFD700")
+    })
+end
+
+-- Yahayuk Mount Section Content
+if TabHandles.YahayukMountTab and TabHandles.YahayukMountTab.Paragraph then
+    TabHandles.YahayukMountTab:Paragraph({
+        Title = "Yahayuk Mount Teleport",
+        Desc = "Automatically teleport through checkpoints with delays",
+        Image = "rbxassetid://111308654185180",
+        ImageSize = 64,
+        Color = Color3.fromHex("#FF6B6B"),
+    })
+
+    TabHandles.YahayukMountTab:Divider()
+
+    -- Checkpoint positions with delays
+    local Checkpoints = {
+        {Position = Vector3.new(-412.40, 249.41, 759.35), Delay = 0},    -- Cp1 (instant)
+        {Position = Vector3.new(-364.59, 388.41, 551.39), Delay = 11},   -- Cp2 (11 sec)
+        {Position = Vector3.new(260.72, 429.41, 502.61), Delay = 11},    -- Cp3 (11 sec)
+        {Position = Vector3.new(333.99, 490.07, 342.65), Delay = 11},    -- Cp4 (11 sec)
+        {Position = Vector3.new(217.10, 314.41, -144.75), Delay = 11},   -- Cp5 (11 sec)
+        {Position = Vector3.new(-630.59, 905.15, -502.97), Delay = 11},  -- Win (11 sec)
+        {Position = Vector3.new(-640.53, 910.94, -503.54), Delay = 1}    -- Last (1 sec)
+    }
+
+    -- Variables for Yahayuk Mount
+    local YahayukMountEnabled = false
+    local MountLoop = nil
+
+    -- Function to teleport to a specific checkpoint
+    local function TeleportToCheckpoint(position)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(position)
+        end
+    end
+
+    -- Function to reset character
+    local function ResetCharacter()
+        LocalPlayer.Character:BreakJoints()
+    end
+
+    -- Function to start the mount loop
+    local function StartMountLoop()
+        if MountLoop then
+            MountLoop:Disconnect()
+            MountLoop = nil
+        end
+        
+        MountLoop = RunService.Heartbeat:Connect(function()
+            if not YahayukMountEnabled then
+                MountLoop:Disconnect()
+                MountLoop = nil
+                return
+            end
+            
+            -- Run the checkpoint sequence
+            for _, checkpoint in ipairs(Checkpoints) do
+                if not YahayukMountEnabled then break end
+                
+                TeleportToCheckpoint(checkpoint.Position)
+                wait(checkpoint.Delay)
+            end
+            
+            -- Reset character and restart the loop if still enabled
+            if YahayukMountEnabled then
+                ResetCharacter()
+                wait(3) -- Wait for character to respawn
+            end
+        end)
+    end
+
+    -- Toggle for Yahayuk Mount
+    local mountToggle = TabHandles.YahayukMountTab:Toggle({
+        Title = "Enable Yahayuk Mount",
+        Desc = "Toggle the automatic checkpoint teleportation",
+        Value = YahayukMountEnabled,
+        Callback = function(state) 
+            YahayukMountEnabled = state
+            
+            if state then
+                if WindUI and WindUI.Notify then
+                    WindUI:Notify({
+                        Title = "Yahayuk Mount",
+                        Content = "Yahayuk Mount Enabled - Starting teleport sequence",
+                        Icon = "check",
+                        Duration = 3
+                    })
+                end
+                StartMountLoop()
+            else
+                if WindUI and WindUI.Notify then
+                    WindUI:Notify({
+                        Title = "Yahayuk Mount",
+                        Content = "Yahayuk Mount Disabled",
+                        Icon = "x",
+                        Duration = 3
+                    })
+                end
+                
+                if MountLoop then
+                    MountLoop:Disconnect()
+                    MountLoop = nil
+                end
+            end
+        end
+    })
+
+    -- Button to manually reset character
+    TabHandles.YahayukMountTab:Button({
+        Title = "Reset Character",
+        Icon = "refresh-cw",
+        Callback = function()
+            ResetCharacter()
+            if WindUI and WindUI.Notify then
+                WindUI:Notify({
+                    Title = "Yahayuk Mount",
+                    Content = "Character reset",
+                    Icon = "refresh-cw",
+                    Duration = 2
+                })
+            end
+        end
+    })
+
+    -- Display checkpoint information
+    TabHandles.YahayukMountTab:Paragraph({
+        Title = "Checkpoint Sequence",
+        Desc = "Cp1 (0s) → Cp2 (11s) → Cp3 (11s) → Cp4 (11s) → Cp5 (11s) → Win (11s) → Last (1s) → Reset",
+        Image = "map",
+        ImageSize = 20,
+        Color = Color3.fromHex("#74B9FF")
     })
 end
 
