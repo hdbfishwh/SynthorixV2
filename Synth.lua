@@ -1,931 +1,950 @@
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+--[[
 
--- Services
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local CoreGui = game:GetService("CoreGui")
-local Camera = workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
+    WindUI Example (wip)
+    
+]]
 
--- Dapatkan username pemain
-local playerName = LocalPlayer.Name
-local displayName = LocalPlayer.DisplayName
 
-WindUI:Localization({
-    Enabled = true,
-    Prefix = "loc:",
-    DefaultLanguage = "en",
-    Translations = {
-        ["en"] = {
-            ["WINDUI_EXAMPLE"] = "Synth [Beta]",
-            ["WELCOME"] = "UniversalAimbot by Synth",
-            ["LIB_DESC"] = "Hello " .. displayName .. ", this script still has allot of bug please report it to my discord server to fix the bug",
-            ["SETTINGS"] = "Settings",
-            ["APPEARANCE"] = "Appearance",
-            ["FEATURES"] = "Features",
-            ["UTILITIES"] = "Utilities",
-            ["UI_ELEMENTS"] = "UI Elements",
-            ["CONFIGURATION"] = "Configuration",
-            ["SAVE_CONFIG"] = "Save Configuration",
-            ["LOAD_CONFIG"] = "Load Configuration",
-            ["THEME_SELECT"] = "Select Theme",
-            ["TRANSPARENCY"] = "Window Transparency",
-            ["DISCORD"] = "Discord Server",
-            ["JOIN_DISCORD"] = "Join Our Discord",
-            ["DISCORD_DESC"] = "Join our Discord community for updates, support, and more!"
-        }
-    }
-})
+local WindUI
 
--- SET TRANSPARENCY TO 0.50 IMMEDIATELY
-WindUI.TransparencyValue = 0.50
-WindUI:SetTheme("Dark")
-
--- Create custom logo
-local function CreateCustomLogo()
-    return 111308654185180
-end
-
-local customLogo = CreateCustomLogo()
-
-local function gradient(text, startColor, endColor)
-    local result = ""
-    for i = 1, #text do
-        local t = (i - 1) / (#text - 1)
-        local r = math.floor((startColor.R + (endColor.R - startColor.R) * t) * 255)
-        local g = math.floor((startColor.G + (endColor.G - startColor.G) * t) * 255)
-        local b = math.floor((startColor.B + (endColor.B - startColor.B) * t) * 255)
-        result = result .. string.format('<font color="rgb(%d,%d,%d)">%s</font>', r, g, b, text:sub(i, i))
-    end
-    return result
-end
-
-WindUI:Popup({
-    Title = gradient("Synth [Beta]", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
-    Icon = 111308654185180, -- Use number format
-    Content = "loc:LIB_DESC",
-    Buttons = {
-        {
-            Title = "Get Started",
-            Icon = "arrow-right",
-            Variant = "Primary",
-            Callback = function() end
-        }
-    }
-})
-
--- Configuration
-local Config = {
-    ESP = {
-        Enabled = false,
-        BoxColor = Color3.new(1, 0.3, 0),
-        DistanceColor = Color3.new(1, 1, 1),
-        UsernameColor = Color3.new(1, 1, 1),
-        HealthGradient = {
-            Color3.new(0, 1, 0),
-            Color3.new(1, 1, 0),
-            Color3.new(1, 0, 0)
-        },
-        SnaplineEnabled = false,
-        SnaplinePosition = "Center",
-        RainbowEnabled = false,
-        ShowUsername = true
-    },
-    Aimbot = {
-        Enabled = false,
-        FOV = 30,
-        MaxDistance = 200,
-        ShowFOV = false,
-        TargetPart = "Head",
-        BigHead = {
-            Enabled = false,
-            Size = 15
-        },
-        Smoothness = 0.5
-    }
-}
-
--- Variables
-local RainbowSpeed = 0.5
-local ESPDrawings = {}
-local BigHeadEnabled = Config.Aimbot.BigHead.Enabled
-local BigHeadSize = Config.Aimbot.BigHead.Size
-local AimbotTarget = nil
-
--- Check if Drawing library is available
-local DrawingLibAvailable = false
-pcall(function()
-    local test = Drawing.new("Square")
-    test:Remove()
-    DrawingLibAvailable = true
-end)
-
--- Functions
-local function CreateESP(player)
-    if player == LocalPlayer or not DrawingLibAvailable then return end
-    
-    local drawings = {}
-    
-    if DrawingLibAvailable then
-        drawings = {
-            Box = Drawing.new("Square"),
-            HealthBar = Drawing.new("Square"),
-            Distance = Drawing.new("Text"),
-            Username = Drawing.new("Text"),
-            Snapline = Drawing.new("Line")
-        }
-        
-        for _, drawing in pairs(drawings) do
-            drawing.Visible = false
-            if drawing.Type == "Square" then
-                drawing.Thickness = 2
-                drawing.Filled = false
-            end
-        end
-        
-        drawings.Box.Color = Config.ESP.BoxColor
-        drawings.HealthBar.Filled = true
-        drawings.Distance.Size = 16
-        drawings.Distance.Center = true
-        drawings.Distance.Color = Config.ESP.DistanceColor
-        
-        drawings.Username.Size = 16
-        drawings.Username.Center = true
-        drawings.Username.Color = Config.ESP.UsernameColor
-        drawings.Username.Text = player.Name
-        
-        drawings.Snapline.Color = Config.ESP.BoxColor
-    end
-    
-    ESPDrawings[player] = drawings
-end
-
-local function UpdateESP(player, drawings)
-    if not Config.ESP.Enabled or not player.Character or not DrawingLibAvailable then
-        if drawings then
-            for _, drawing in pairs(drawings) do
-                if drawing and typeof(drawing) == "Instance" then
-                    drawing.Visible = false
-                end
-            end
-        end
-        return
-    end
-    
-    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-    local head = player.Character:FindFirstChild("Head")
-    
-    if not humanoid or humanoid.Health <= 0 or not head then
-        for _, drawing in pairs(drawings) do
-            if drawing and typeof(drawing) == "Instance" then
-                drawing.Visible = false
-            end
-        end
-        return
-    end
-    
-    local headPos, onScreen = Camera:WorldToViewportPoint(head.Position)
-    if not onScreen then
-        for _, drawing in pairs(drawings) do
-            if drawing and typeof(drawing) == "Instance" then
-                drawing.Visible = false
-            end
-        end
-        return
-    end
-    
-    local distance = (head.Position - Camera.CFrame.Position).Magnitude
-    local scale = 1000 / distance
-    
-    -- Box ESP
-    if drawings.Box then
-        drawings.Box.Size = Vector2.new(scale, scale * 1.5)
-        drawings.Box.Position = Vector2.new(headPos.X - (scale / 2), headPos.Y - (scale * 0.75))
-        drawings.Box.Visible = true
-    end
-    
-    -- Health Bar
-    if drawings.HealthBar then
-        local healthRatio = humanoid.Health / humanoid.MaxHealth
-        local healthColorIndex = math.clamp(3 - (healthRatio * 2), 1, 3)
-        local floorIndex = math.floor(healthColorIndex)
-        local ceilIndex = math.ceil(healthColorIndex)
-        
-        if Config.ESP.HealthGradient[floorIndex] and Config.ESP.HealthGradient[ceilIndex] then
-            local healthColor = Config.ESP.HealthGradient[floorIndex]:Lerp(
-                Config.ESP.HealthGradient[ceilIndex],
-                healthColorIndex % 1
-            )
-            
-            drawings.HealthBar.Size = Vector2.new(4, scale * 1.5 * healthRatio)
-            drawings.HealthBar.Position = Vector2.new(
-                headPos.X + (scale / 2) + 5,
-                (headPos.Y - (scale * 0.75)) + (scale * 1.5 * (1 - healthRatio))
-            )
-            drawings.HealthBar.Color = healthColor
-            drawings.HealthBar.Visible = true
-        end
-    end
-    
-    -- Distance
-    if drawings.Distance then
-        drawings.Distance.Text = math.floor(distance) .. "m"
-        drawings.Distance.Position = Vector2.new(headPos.X, headPos.Y + (scale * 0.75) + 10)
-        drawings.Distance.Visible = true
-    end
-    
-    -- Username
-    if Config.ESP.ShowUsername and drawings.Username then
-        drawings.Username.Text = player.Name
-        drawings.Username.Position = Vector2.new(headPos.X, headPos.Y - (scale * 0.75) - 20)
-        drawings.Username.Visible = true
-    elseif drawings.Username then
-        drawings.Username.Visible = false
-    end
-    
-    -- Rainbow effect
-    if Config.ESP.RainbowEnabled then
-        local hue = (tick() * RainbowSpeed) % 1
-        local rainbowColor = Color3.fromHSV(hue, 1, 1)
-        
-        if drawings.Snapline then
-            drawings.Snapline.Color = rainbowColor
-        end
-        if drawings.Box then
-            drawings.Box.Color = rainbowColor
-        end
-        if drawings.Username then
-            drawings.Username.Color = rainbowColor
-        end
-    else
-        if drawings.Snapline then
-            drawings.Snapline.Color = Config.ESP.BoxColor
-        end
-        if drawings.Box then
-            drawings.Box.Color = Config.ESP.BoxColor
-        end
-        if drawings.Username then
-            drawings.Username.Color = Config.ESP.UsernameColor
-        end
-    end
-    
-    -- Snapline
-    if Config.ESP.SnaplineEnabled and drawings.Snapline then
-        local lineYPosition
-        if Config.ESP.SnaplinePosition == "Bottom" then
-            lineYPosition = Camera.ViewportSize.Y
-        elseif Config.ESP.SnaplinePosition == "Top" then
-            lineYPosition = 0
-        else
-            lineYPosition = Camera.ViewportSize.Y / 2
-        end
-        
-        drawings.Snapline.From = Vector2.new(headPos.X, headPos.Y + (scale * 0.75))
-        drawings.Snapline.To = Vector2.new(Camera.ViewportSize.X / 2, lineYPosition)
-        drawings.Snapline.Visible = true
-    elseif drawings.Snapline then
-        drawings.Snapline.Visible = false
-    end
-end
-
-local function FindAimbotTarget()
-    local closestTarget = nil
-    local closestDistance = math.huge
-    local fov = Config.Aimbot.FOV or 30
-    
-    if not LocalPlayer.Character then return nil end
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-            local head = player.Character.Head
-            local direction = (head.Position - Camera.CFrame.Position).Unit
-            local lookVector = Camera.CFrame.LookVector
-            local angle = math.deg(math.acos(direction:Dot(lookVector)))
-            
-            if angle <= (fov / 2) then
-                local distance = (Camera.CFrame.Position - head.Position).Magnitude
-                
-                if distance <= Config.Aimbot.MaxDistance then
-                    if distance < closestDistance then
-                        closestDistance = distance
-                        closestTarget = player
-                    end
-                end
-            end
-        end
-    end
-    
-    return closestTarget
-end
-
--- FOV Circle
-local FOVCircle = nil
-if DrawingLibAvailable then
-    pcall(function()
-        FOVCircle = Drawing.new("Circle")
-        FOVCircle.Thickness = 2
-        FOVCircle.NumSides = 100
-        FOVCircle.Filled = false
-        FOVCircle.Visible = Config.Aimbot.ShowFOV
-        FOVCircle.Color = Color3.new(1, 1, 1)
+do
+    local ok, result = pcall(function()
+        return require("./src/Init")
     end)
-end
-
--- Big Head Function
-local function UpdateBigHead()
-    if not BigHeadEnabled then return end
     
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-            pcall(function()
-                local head = player.Character.Head
-                head.Size = Vector3.new(BigHeadSize, BigHeadSize, BigHeadSize)
-                head.Transparency = 1
-                head.BrickColor = BrickColor.new("Red")
-                head.Material = "Neon"
-                head.CanCollide = false
-                head.Massless = true
-            end)
-        end
+    if ok then
+        WindUI = result
+    else 
+        WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
     end
 end
 
--- Function to open Discord link
-local function OpenDiscord()
-    local discordUrl = "https://discord.gg/ckc8gFGuT7"
-    WindUI:Notify({
-        Title = "Discord",
-        Content = "Opening Discord invite link...",
-        Icon = "external-link",
-        Duration = 3
+
+
+function createPopup()
+    return WindUI:Popup({
+        Title = "Welcome to the WindUI!",
+        Icon = "bird",
+        Content = "Hello!",
+        Buttons = {
+            {
+                Title = "Hahaha",
+                Icon = "bird",
+            },
+            {
+                Title = "Hahaha",
+                Icon = "bird",
+            },
+            {
+                Title = "Hahaha",
+                Icon = "bird",
+            }
+        }
     })
-    
-    -- Try to open the link
-    pcall(function()
-        if syn then
-            syn.request({
-                Url = discordUrl,
-                Method = "GET"
-            })
-        else
-            -- Fallback for other executors
-            setclipboard(discordUrl)
-            WindUI:Notify({
-                Title = "Discord",
-                Content = "Link copied to clipboard!",
-                Icon = "copy",
-                Duration = 5
-            })
-        end
-    end)
 end
 
+
+
+-- */  Window  /* --
 local Window = WindUI:CreateWindow({
-    Title = "loc:WINDUI_EXAMPLE",
-    Icon = customLogo,
-    Author = "loc:WELCOME",
-    Folder = "WindUI_Example",
-    Size = UDim2.fromOffset(200, 200),
-    Theme = "Dark",
-    User = {
-        Enabled = true,
-        Anonymous = false,
-        Username = playerName,
-        UserId = LocalPlayer.UserId,
+    Title = ".ftgs hub  |  WindUI Example",
+    Author = "by .ftgs • Footagesus",
+    Folder = "ftgshub",
+    Icon = "sfsymbols:appleLogo",
+    IconSize = 22*2,
+    NewElements = true,
+    --Size = UDim2.fromOffset(700,700),
+    
+    HideSearchBar = false,
+    
+    OpenButton = {
+        Title = "Open .ftgs hub UI", -- can be changed
+        CornerRadius = UDim.new(1,0), -- fully rounded
+        StrokeThickness = 3, -- removing outline
+        Enabled = true, -- enable or disable openbutton
+        Draggable = true,
+        OnlyMobile = false,
+        
+        Color = ColorSequence.new( -- gradient
+            Color3.fromHex("#30FF6A"), 
+            Color3.fromHex("#e7ff2f")
+        )
+    }
+    
+    -- Removed KeySystem entirely
+})
+
+
+--Window:SetUIScale(.8)
+
+-- */  Tags  /* --
+do
+    Window:Tag({
+        Title = "v" .. WindUI.Version,
+        Icon = "github",
+        Color = Color3.fromHex("#1c1c1c")
+    })
+end
+
+-- */  Theme (soon)  /* --
+do
+    --[[WindUI:AddTheme({
+        Name = "Stylish",
+        
+        Accent = Color3.fromHex("#3b82f6"), 
+        Dialog = Color3.fromHex("#1a1a1a"), 
+        Outline = Color3.fromHex("#3b82f6"),
+        Text = Color3.fromHex("#f8fafc"),  
+        Placeholder = Color3.fromHex("#94a3b8"),
+        Button = Color3.fromHex("#334155"), 
+        Icon = Color3.fromHex("#60a5fa"), 
+        
+        WindowBackground = Color3.fromHex("#0f172a"),
+        
+        TopbarButtonIcon = Color3.fromHex("#60a5fa"),
+        TopbarTitle = Color3.fromHex("#f8fafc"),
+        TopbarAuthor = Color3.fromHex("#94a3b8"),
+        TopbarIcon = Color3.fromHex("#3b82f6"),
+        
+        TabBackground = Color3.fromHex("#1e293b"),    
+        TabTitle = Color3.fromHex("#f8fafc"),
+        TabIcon = Color3.fromHex("#60a5fa"),
+        
+        ElementBackground = Color3.fromHex("#1e293b"),
+        ElementTitle = Color3.fromHex("#f8fafc"),
+        ElementDesc = Color3.fromHex("#cbd5e1"),
+        ElementIcon = Color3.fromHex("#60a5fa"),
+    })--]]
+    
+    -- WindUI:SetTheme("Stylish")
+end
+
+
+
+-- */ Other Functions /* --
+local function parseJSON(luau_table, indent, level, visited)
+    indent = indent or 2
+    level = level or 0
+    visited = visited or {}
+    
+    local currentIndent = string.rep(" ", level * indent)
+    local nextIndent = string.rep(" ", (level + 1) * indent)
+    
+    if luau_table == nil then
+        return "null"
+    end
+    
+    local dataType = type(luau_table)
+    
+    if dataType == "table" then
+        if visited[luau_table] then
+            return "\"[Circular Reference]\""
+        end
+        
+        visited[luau_table] = true
+        
+        local isArray = true
+        local maxIndex = 0
+        
+        for k, _ in pairs(luau_table) do
+            if type(k) == "number" and k > maxIndex then
+                maxIndex = k
+            end
+            if type(k) ~= "number" or k <= 0 or math.floor(k) ~= k then
+                isArray = false
+                break
+            end
+        end
+        
+        local count = 0
+        for _ in pairs(luau_table) do
+            count = count + 1
+        end
+        if count ~= maxIndex and isArray then
+            isArray = false
+        end
+        
+        if count == 0 then
+            return "{}"
+        end
+        
+        if isArray then
+            if count == 0 then
+                return "[]"
+            end
+            
+            local result = "[\n"
+            
+            for i = 1, maxIndex do
+                result = result .. nextIndent .. parseJSON(luau_table[i], indent, level + 1, visited)
+                if i < maxIndex then
+                    result = result .. ","
+                end
+                result = result .. "\n"
+            end
+            
+            result = result .. currentIndent .. "]"
+            return result
+        else
+            local result = "{\n"
+            local first = true
+            
+            local keys = {}
+            for k in pairs(luau_table) do
+                table.insert(keys, k)
+            end
+            table.sort(keys, function(a, b)
+                if type(a) == type(b) then
+                    return tostring(a) < tostring(b)
+                else
+                    return type(a) < type(b)
+                end
+            end)
+            
+            for _, k in ipairs(keys) do
+                local v = luau_table[k]
+                if not first then
+                    result = result .. ",\n"
+                else
+                    first = false
+                end
+                
+                if type(k) == "string" then
+                    result = result .. nextIndent .. "\"" .. k .. "\": "
+                else
+                    result = result .. nextIndent .. "\"" .. tostring(k) .. "\": "
+                end
+                
+                result = result .. parseJSON(v, indent, level + 1, visited)
+            end
+            
+            result = result .. "\n" .. currentIndent .. "}"
+            return result
+        end
+    elseif dataType == "string" then
+        local escaped = luau_table:gsub("\\", "\\\\")
+        escaped = escaped:gsub("\"", "\\\"")
+        escaped = escaped:gsub("\n", "\\n")
+        escaped = escaped:gsub("\r", "\\r")
+        escaped = escaped:gsub("\t", "\\t")
+        
+        return "\"" .. escaped .. "\""
+    elseif dataType == "number" then
+        return tostring(luau_table)
+    elseif dataType == "boolean" then
+        return luau_table and "true" or "false"
+    elseif dataType == "function" then
+        return "\"function\""
+    else
+        return "\"" .. dataType .. "\""
+    end
+end
+
+local function tableToClipboard(luau_table, indent)
+    indent = indent or 4
+    local jsonString = parseJSON(luau_table, indent)
+    setclipboard(jsonString)
+    return jsonString
+end
+
+
+-- */  About Tab  /* --
+do
+    local AboutTab = Window:Tab({
+        Title = "About WindUI",
+        Icon = "info",
+    })
+    
+    local AboutSection = AboutTab:Section({
+        Title = "About WindUI",
+    })
+    
+    AboutSection:Image({
+        Image = "https://repository-images.githubusercontent.com/880118829/428bedb1-dcbd-43d5-bc7f-3beb2e9e0177",
+        AspectRatio = "16:9",
+        Radius = 9,
+    })
+    
+    AboutSection:Space({ Columns = 3 })
+    
+    AboutSection:Section({
+        Title = "What is WindUI?",
+        TextSize = 24,
+        FontWeight = Enum.FontWeight.SemiBold,
+    })
+
+    AboutSection:Space()
+    
+    AboutSection:Section({
+        Title = [[WindUI is a stylish, open-source UI (User Interface) library specifically designed for Roblox Script Hubs.
+Developed by Footagesus (.ftgs, Footages).
+It aims to provide developers with a modern, customizable, and easy-to-use toolkit for creating visually appealing interfaces within Roblox.
+The project is primarily written in Lua (Luau), the scripting language used in Roblox.]],
+        TextSize = 18,
+        TextTransparency = .35,
+        FontWeight = Enum.FontWeight.Medium,
+    })
+    
+    AboutTab:Space({ Columns = 4 }) 
+    
+    
+    -- Default buttons
+    
+    AboutTab:Button({
+        Title = "Export WindUI JSON (copy)",
+        Color = Color3.fromHex("#a2ff30"),
+        Justify = "Center",
+        IconAlign = "Left",
+        Icon = "", -- removing icon
         Callback = function()
+            tableToClipboard(WindUI)
             WindUI:Notify({
-                Title = "User Profile",
-                Content = "Hello, " .. displayName .. "! (ID: " .. LocalPlayer.UserId .. ")",
-                Duration = 3
+                Title = "WindUI JSON",
+                Content = "Copied to Clipboard!"
             })
         end
-    },
-    SideBarWidth = 200,
-    Transparency = 0.50
-})
-
-Window:CreateTopbarButton("theme-switcher", "moon", function()
-    WindUI:SetTheme(WindUI:GetCurrentTheme() == "Dark" and "Light" or "Dark")
-    WindUI:Notify({
-        Title = "Theme Changed",
-        Content = "Current theme: "..WindUI:GetCurrentTheme(),
     })
-end, 990)
+    AboutTab:Space({ Columns = 1 }) 
+    
+    
+    AboutTab:Button({
+        Title = "Destroy Window",
+        Color = Color3.fromHex("#ff4830"),
+        Justify = "Center",
+        Icon = "shredder",
+        IconAlign = "Left",
+        Callback = function()
+            Window:Destroy()
+        end
+    })
+end
 
-local Tabs = {
-    Main = Window:Section({ Title = "loc:FEATURES", Opened = true }),
-    Settings = Window:Section({ Title = "loc:SETTINGS", Opened = true }),
-    Utilities = Window:Section({ Title = "loc:UTILITIES", Opened = true }),
-    Discord = Window:Section({ Title = "loc:DISCORD", Opened = true })
-}
-
-local TabHandles = {
-    ESP = Tabs.Main:Tab({ Title = "ESP", Icon = "eye" }),
-    Aimbot = Tabs.Main:Tab({ Title = "Aimbot", Icon = "crosshair" }),
-    Appearance = Tabs.Settings:Tab({ Title = "loc:APPEARANCE", Icon = "brush" }),
-    Config = Tabs.Utilities:Tab({ Title = "loc:CONFIGURATION", Icon = "settings" }),
-    DiscordTab = Tabs.Discord:Tab({ Title = "loc:DISCORD", Icon = "message-circle" })
-}
-
--- Add a custom logo to the main section
-TabHandles.ESP:Paragraph({
-    Title = "ESP Settings",
-    Desc = "Configure your ESP features",
-    Image = customLogo,
-    ImageSize = 64,
-    Color = Color3.fromHex("#30ff6a"),
+-- */  Elements Section  /* --
+local ElementsSection = Window:Section({
+    Title = "Elements",
+})
+local ConfigUsageSection = Window:Section({
+    Title = "Config Usage",
+})
+local OtherSection = Window:Section({
+    Title = "Other",
 })
 
-TabHandles.ESP:Divider()
 
--- Add Discord section content
-TabHandles.DiscordTab:Paragraph({
-    Title = "Join Our Community",
-    Desc = "loc:DISCORD_DESC",
-    Image = customLogo,
-    ImageSize = 64,
-    Color = Color3.fromHex("#5865F2")
-})
 
-TabHandles.DiscordTab:Divider()
 
-TabHandles.DiscordTab:Button({
-    Title = "loc:JOIN_DISCORD",
-    Icon = "discord",
-    Variant = "Primary",
-    Callback = OpenDiscord
-})
+-- */  Overview Tab  /* --
+do
+    local OverviewTab = ElementsSection:Tab({
+        Title = "Overview",
+        Icon = "chart-no-axes-gantt"
+    })
+    
+    local OverviewSection1 = OverviewTab:Section({
+        Title = "Group's Example"
+    })
+    
+    local OverviewGroup1 = OverviewTab:Group({})
+    
+    OverviewGroup1:Button({ Title = "Button 1", Justify = "Center", Icon = "", Callback = function() print("clicked button 1") end })
+    OverviewGroup1:Space()
+    OverviewGroup1:Button({ Title = "Button 2", Justify = "Center", Icon = "", Callback = function() print("clicked button 2") end })
+    
+    OverviewTab:Space()
+    
+    local OverviewGroup2 = OverviewTab:Group({})
+    
+    OverviewGroup2:Button({ Title = "Button 1", Justify = "Center", Icon = "", Callback = function() print("clicked button 1") end })
+    OverviewGroup2:Space()
+    OverviewGroup2:Toggle({ Title = "Toggle 2",  Callback = function(v) print("clicked toggle 2:", v) end })
+    OverviewGroup2:Space()
+    OverviewGroup2:Colorpicker({ Title = "Colorpicker 3", Default = Color3.fromHex("#30ff6a"), Callback = function(color) print(color) end })
+    
+    OverviewTab:Space()
+    
+    local OverviewGroup3 = OverviewTab:Group({})
+    
+    
+    local OverviewSection1 = OverviewGroup3:Section({
+        Title = "Section 1",
+        Box = true,
+        Opened = true,
+    })
+    OverviewSection1:Button({ Title = "Button 1", Justify = "Center", Icon = "", Callback = function() print("clicked button 1") end })
+    OverviewSection1:Space()
+    OverviewSection1:Toggle({ Title = "Toggle 2",  Callback = function(v) print("clicked toggle 2:", v) end })
+    
+    
+    OverviewGroup3:Space()
+    
+    
+    local OverviewSection2 = OverviewGroup3:Section({
+        Title = "Section 2",
+        Box = true,
+        Opened = true,
+    })
+    OverviewSection2:Button({ Title = "Button 1", Justify = "Center", Icon = "", Callback = function() print("clicked button 1") end })
+    OverviewSection2:Space()
+    OverviewSection2:Button({ Title = "Button 2", Justify = "Center", Icon = "", Callback = function() print("clicked button 2") end })
 
-TabHandles.DiscordTab:Paragraph({
-    Title = "Benefits of Joining",
-    Desc = "• Get script updates\n• Request features\n• Report bugs\n• Get support\n• Share your experiences",
-    Image = "star",
-    ImageSize = 20,
-    Color = Color3.fromHex("#FFD700")
-})
+    --OverviewTab:Space()
+    
+end
 
--- Toggle untuk ESP
-local espToggle = TabHandles.ESP:Toggle({
-    Title = "Enable ESP",
-    Desc = "Toggle ESP on/off",
-    Value = Config.ESP.Enabled,
-    Callback = function(state) 
-        Config.ESP.Enabled = state
-        
-        -- Jika ESP dimatikan, sembunyikan semua drawing
-        if not state then
-            for _, drawings in pairs(ESPDrawings) do
-                if drawings then
-                    for _, drawing in pairs(drawings) do
-                        if drawing and typeof(drawing) == "Instance" then
-                            drawing.Visible = false
-                        end
+
+-- */  Toggle Tab  /* --
+do
+    local ToggleTab = ElementsSection:Tab({
+        Title = "Toggle",
+        Icon = "arrow-left-right"
+    })
+    
+    
+    ToggleTab:Toggle({
+        Title = "Toggle",
+    })
+    
+    ToggleTab:Space()
+    
+    ToggleTab:Toggle({
+        Title = "Toggle",
+        Desc = "Toggle example"
+    })
+    
+    ToggleTab:Space()
+    
+    local ToggleGroup1 = ToggleTab:Group()
+    ToggleGroup1:Toggle({})
+    ToggleGroup1:Space()
+    ToggleGroup1:Toggle({})
+    
+    ToggleTab:Space()
+    
+    ToggleTab:Toggle({
+        Title = "Checkbox",
+        Type = "Checkbox",
+    })
+    
+    ToggleTab:Space()
+    
+    ToggleTab:Toggle({
+        Title = "Checkbox",
+        Desc = "Checkbox example",
+        Type = "Checkbox",
+    })
+    
+    ToggleTab:Space()
+    
+    
+    ToggleTab:Toggle({
+        Title = "Toggle",
+        Locked = true,
+    })
+    
+    ToggleTab:Toggle({
+        Title = "Toggle",
+        Desc = "Toggle example",
+        Locked = true,
+    })
+end
+
+
+-- */  Button Tab  /* --
+do
+    local ButtonTab = ElementsSection:Tab({
+        Title = "Button",
+        Icon = "mouse-pointer-click",
+    })
+    
+    
+    local HighlightButton
+    HighlightButton = ButtonTab:Button({
+        Title = "Highlight Button",
+        Icon = "mouse",
+        Callback = function()
+            print("clicked highlight")
+            HighlightButton:Highlight()
+        end
+    })
+
+    ButtonTab:Space()
+    
+    ButtonTab:Button({
+        Title = "Blue Button",
+        Color = Color3.fromHex("#305dff"),
+        Icon = "",
+        Callback = function()
+        end
+    })
+
+    ButtonTab:Space()
+    
+    ButtonTab:Button({
+        Title = "Blue Button",
+        Desc = "With description",
+        Color = Color3.fromHex("#305dff"),
+        Icon = "",
+        Callback = function()
+        end
+    })
+    
+    ButtonTab:Space()
+    
+    ButtonTab:Button({
+        Title = "Button",
+        Desc = "Button example",
+    })
+    
+    ButtonTab:Space()
+    
+    ButtonTab:Button({
+        Title = "Button",
+        Locked = true,
+    })
+    
+    
+    ButtonTab:Button({
+        Title = "Button",
+        Desc = "Button example",
+        Locked = true,
+    })
+end
+
+
+-- */  Input Tab  /* --
+do
+    local InputTab = ElementsSection:Tab({
+        Title = "Input",
+        Icon = "text-cursor-input",
+    })
+    
+    
+    InputTab:Input({
+        Title = "Input",
+        Icon = "mouse"
+    })
+    
+    InputTab:Space()
+    
+    
+    InputTab:Input({
+        Title = "Input Textarea",
+        Type = "Textarea",
+        Icon = "mouse",
+    })
+    
+    InputTab:Space()
+    
+    
+    InputTab:Input({
+        Title = "Input Textarea",
+        Type = "Textarea",
+        --Icon = "mouse",
+    })
+    
+    InputTab:Space()
+    
+    
+    InputTab:Input({
+        Title = "Input",
+        Desc = "Input example",
+    })
+    
+    InputTab:Space()
+    
+    
+    InputTab:Input({
+        Title = "Input Textarea",
+        Desc = "Input example",
+        Type = "Textarea",
+    })
+    
+    InputTab:Space()
+    
+    
+    InputTab:Input({
+        Title = "Input",
+        Locked = true,
+    })
+    
+    
+    InputTab:Input({
+        Title = "Input",
+        Desc = "Input example",
+        Locked = true,
+    })
+end
+
+
+-- */  Dropdown Tab  /* --
+do
+    local DropdownTab = ElementsSection:Tab({
+        Title = "Dropdown",
+        Icon = "logs",
+    })
+    
+    
+    DropdownTab:Dropdown({
+        Title = "Advanced Dropdown (example)",
+        Values = {
+            {
+                Title = "New file",
+                Desc = "Create a new file",
+                Icon = "file-plus",
+                Callback = function() 
+                    print("Clicked 'New File'")
+                end
+            },
+            {
+                Title = "Copy link",
+                Desc = "Copy the file link",
+                Icon = "copy",
+                Callback = function() 
+                    print("Clicked 'Copy link'")
+                end
+            },
+            {
+                Title = "Edit file",
+                Desc = "Allows you to edit the file",
+                Icon = "file-pen",
+                Callback = function() 
+                    print("Clicked 'Edit file'")
+                end
+            },
+            {
+                Type = "Divider",
+            },
+            {
+                Title = "Delete file",
+                Desc = "Permanently delete the file",
+                Icon = "trash",
+                Callback = function() 
+                    print("Clicked 'Delete file'")
+                end
+            },
+        }
+    })
+    
+    DropdownTab:Space()
+    
+    
+end
+
+
+
+--[[  idk. VideoFrame is not working with custom video on exploits
+      I don't know why
+    
+-- */  Video Tab  /* --
+do
+    local VideoTab = ElementsSection:Tab({
+        Title = "Video",
+        Icon = "video",
+    })
+    
+    VideoTab:Video({
+        Title = "My Video Hahahah", -- optional
+        Author = ".ftgs", -- optional
+        Video = "https://cdn.discordapp.com/attachments/1337368451865645096/1402703845657673878/VID_20250616_180732_158.webm?ex=68fc5f01&is=68fb0d81&hm=f4f0a88dbace2d3cef92535b2e57effae6d4c4fc444338163faafa7f3fdac529&"
+    })
+end
+
+--]]
+
+
+-- */  Config Usage  /* --
+do -- config elements
+    local ConfigElementsTab = ConfigUsageSection:Tab({
+        Title = "Config Elements",
+        Icon = "square-dashed-mouse-pointer",
+    })
+    
+    -- All elements are taken from the official documentation: https://footagesus.github.io/WindUI-Docs/docs
+    
+    -- Saving elements to the config using `Flag`
+    
+    ConfigElementsTab:Colorpicker({
+        Flag = "ColorpickerTest",
+        Title = "Colorpicker",
+        Desc = "Colorpicker Description",
+        Default = Color3.fromRGB(0, 255, 0),
+        Transparency = 0,
+        Locked = false,
+        Callback = function(color) 
+            print("Background color: " .. tostring(color))
+        end
+    })
+    
+    ConfigElementsTab:Space()
+    
+    ConfigElementsTab:Dropdown({
+        Flag = "DropdownTest",
+        Title = "Advanced Dropdown",
+        Values = {
+            {
+                Title = "Category A",
+                Icon = "bird"
+            },
+            {
+                Title = "Category B",
+                Icon = "house"
+            },
+            {
+                Title = "Category C",
+                Icon = "droplet"
+            },
+        },
+        Value = "Category A",
+        Callback = function(option) 
+            print("Category selected: " .. option.Title .. " with icon " .. option.Icon) 
+        end
+    })
+    ConfigElementsTab:Dropdown({
+        Flag = "DropdownTest2",
+        Title = "Advanced Dropdown 2",
+        Values = {
+            {
+                Title = "Category A",
+                Icon = "bird"
+            },
+            {
+                Title = "Category B",
+                Icon = "house"
+            },
+            {
+                Title = "Category C",
+                Icon = "droplet",
+                Locked = true,
+            },
+        },
+        Value = "Category A",
+        Multi = true,
+        Callback = function(options) 
+            local titles = {}
+            for _, v in ipairs(options) do
+                table.insert(titles, v.Title)
+            end
+            print("Selected: " .. table.concat(titles, ", "))
+        end
+    })
+    
+    
+    ConfigElementsTab:Space()
+    
+    ConfigElementsTab:Input({
+        Flag = "InputTest",
+        Title = "Input",
+        Desc = "Input Description",
+        Value = "Default value",
+        InputIcon = "bird",
+        Type = "Input", -- or "Textarea"
+        Placeholder = "Enter text...",
+        Callback = function(input) 
+            print("Text entered: " .. input)
+        end
+    })
+    
+    ConfigElementsTab:Space()
+    
+    ConfigElementsTab:Keybind({
+        Flag = "KeybindTest",
+        Title = "Keybind",
+        Desc = "Keybind to open ui",
+        Value = "G",
+        Callback = function(v)
+            Window:SetToggleKey(Enum.KeyCode[v])
+        end
+    })
+    
+    ConfigElementsTab:Space()
+    
+    ConfigElementsTab:Slider({
+        Flag = "SliderTest",
+        Title = "Slider",
+        Step = 1,
+        Value = {
+            Min = 20,
+            Max = 120,
+            Default = 70,
+        },
+        Callback = function(value)
+            print(value)
+        end
+    })
+    
+    ConfigElementsTab:Space()
+    
+    ConfigElementsTab:Toggle({
+        Flag = "ToggleTest",
+        Title = "Toggle",
+        Desc = "Toggle Description",
+        --Icon = "house",
+        --Type = "Checkbox",
+        Default = false,
+        Callback = function(state) 
+            print("Toggle Activated" .. tostring(state))
+        end
+    })
+end
+
+do -- config panel
+    local ConfigTab = ConfigUsageSection:Tab({
+        Title = "Config Usage",
+        Icon = "folder",
+    })
+
+    local ConfigManager = Window.ConfigManager
+    local ConfigName = "default"
+
+    local ConfigNameInput = ConfigTab:Input({
+        Title = "Config Name",
+        Icon = "file-cog",
+        Callback = function(value)
+            ConfigName = value
+        end
+    })
+
+    ConfigTab:Space()
+    
+    local AutoLoadToggle = ConfigTab:Toggle({
+        Title = "Enable Auto Load to Selected Config",
+        Value = false,
+        Callback = function(v)
+            Window.CurrentConfig:SetAutoLoad(v)
+        end
+    })
+
+    ConfigTab:Space()
+
+    local AllConfigs = ConfigManager:AllConfigs()
+    local DefaultValue = table.find(AllConfigs, ConfigName) and ConfigName or nil
+
+    local AllConfigsDropdown = ConfigTab:Dropdown({
+        Title = "All Configs",
+        Desc = "Select existing configs",
+        Values = AllConfigs,
+        Value = DefaultValue,
+        Callback = function(value)
+            ConfigName = value
+            ConfigNameInput:Set(value)
+            
+            AutoLoadToggle:Set(ConfigManager:GetConfig(ConfigName).AutoLoad or false)
+        end
+    })
+
+    ConfigTab:Space()
+
+    ConfigTab:Button({
+        Title = "Save Config",
+        Icon = "",
+        Justify = "Center",
+        Callback = function()
+            Window.CurrentConfig = ConfigManager:Config(ConfigName)
+            if Window.CurrentConfig:Save() then
+                WindUI:Notify({
+                    Title = "Config Saved",
+                    Desc = "Config '" .. ConfigName .. "' saved",
+                    Icon = "check",
+                })
+            end
+            
+            AllConfigsDropdown:Refresh(ConfigManager:AllConfigs())
+        end
+    })
+
+    ConfigTab:Space()
+
+    ConfigTab:Button({
+        Title = "Load Config",
+        Icon = "",
+        Justify = "Center",
+        Callback = function()
+            Window.CurrentConfig = ConfigManager:CreateConfig(ConfigName)
+            if Window.CurrentConfig:Load() then
+                WindUI:Notify({
+                    Title = "Config Loaded",
+                    Desc = "Config '" .. ConfigName .. "' loaded",
+                    Icon = "refresh-cw",
+                })
+            end
+        end
+    })
+
+    ConfigTab:Space()
+
+    ConfigTab:Button({
+        Title = "Print AutoLoad Configs",
+        Icon = "",
+        Justify = "Center",
+        Callback = function()
+            print(HttpService:JSONDecode(ConfigManager:GetAutoLoadConfigs()))
+        end
+    })
+end
+
+
+
+
+-- */  Other  /* --
+do
+    local InviteCode = "ftgs-development-hub-1300692552005189632"
+    local DiscordAPI = "https://discord.com/api/v10/invites/" .. InviteCode .. "?with_counts=true&with_expiration=true"
+
+    local Response = WindUI.cloneref(game:GetService("HttpService")):JSONDecode(WindUI.Creator.Request({
+        Url = DiscordAPI,
+        Method = "GET",
+        Headers = {
+            ["User-Agent"] = "WindUI/Example",
+            ["Accept"] = "application/json"
+        }
+    }).Body)
+    
+    local DiscordTab = OtherSection:Tab({
+        Title = "Discord",
+    })
+    
+    if Response and Response.guild then
+        DiscordTab:Section({
+            Title = "Join our Discord server!",
+            TextSize = 20,
+        })
+        local DiscordServerParagraph = DiscordTab:Paragraph({
+            Title = tostring(Response.guild.name),
+            Desc = tostring(Response.guild.description),
+            Image = "https://cdn.discordapp.com/icons/" .. Response.guild.id .. "/" .. Response.guild.icon .. ".png?size=1024",
+            Thumbnail = "https://cdn.discordapp.com/banners/1300692552005189632/35981388401406a4b7dffd6f447a64c4.png?size=512",
+            ImageSize = 48,
+            Buttons = {
+                {
+                    Title = "Copy link",
+                    Icon = "link",
+                    Callback = function()
+                        setclipboard("https://discord.gg/" .. InviteCode)
                     end
-                end
-            end
-        end
+                }
+            }
+        })
         
-        WindUI:Notify({
-            Title = "ESP",
-            Content = state and "ESP Enabled" or "ESP Disabled",
-            Icon = state and "check" or "x",
-            Duration = 2
-        })
     end
-})
-
--- Toggle untuk menampilkan username
-local usernameToggle = TabHandles.ESP:Toggle({
-    Title = "Show Username",
-    Desc = "Toggle username display on/off",
-    Value = Config.ESP.ShowUsername,
-    Callback = function(state) 
-        Config.ESP.ShowUsername = state
-        
-        WindUI:Notify({
-            Title = "Username ESP",
-            Content = state and "Username Display Enabled" or "Username Display Disabled",
-            Icon = state and "check" or "x",
-            Duration = 2
-        })
-    end
-})
-
-local snaplineToggle = TabHandles.ESP:Toggle({
-    Title = "Enable Snapline",
-    Desc = "Toggle snapline on/off",
-    Value = Config.ESP.SnaplineEnabled,
-    Callback = function(state) 
-        Config.ESP.SnaplineEnabled = state
-        WindUI:Notify({
-            Title = "Snapline",
-            Content = state and "Snapline Enabled" or "Snapline Disabled",
-            Icon = state and "check" or "x",
-            Duration = 2
-        })
-    end
-})
-
-local rainbowToggle = TabHandles.ESP:Toggle({
-    Title = "Rainbow Effect",
-    Desc = "Toggle rainbow colors on/off",
-    Value = Config.ESP.RainbowEnabled,
-    Callback = function(state) 
-        Config.ESP.RainbowEnabled = state
-        WindUI:Notify({
-            Title = "Rainbow",
-            Content = state and "Rainbow Enabled" or "Rainbow Disabled",
-            Icon = state and "check" or "x",
-            Duration = 2
-        })
-    end
-})
-
-local snaplinePosition = TabHandles.ESP:Dropdown({
-    Title = "Snapline Position",
-    Values = { "Center", "Bottom", "Top" },
-    Value = Config.ESP.SnaplinePosition,
-    Callback = function(option)
-        Config.ESP.SnaplinePosition = option
-        WindUI:Notify({
-            Title = "Snapline Position",
-            Content = "Position: "..option,
-            Duration = 2
-        })
-    end
-})
-
-TabHandles.ESP:Colorpicker({
-    Title = "ESP Color",
-    Default = Config.ESP.BoxColor,
-    Callback = function(color, transparency)
-        Config.ESP.BoxColor = color
-        WindUI:Notify({
-            Title = "ESP Color",
-            Content = "Color changed",
-            Duration = 2
-        })
-    end
-})
-
-TabHandles.ESP:Colorpicker({
-    Title = "Username Color",
-    Default = Config.ESP.UsernameColor,
-    Callback = function(color, transparency)
-        Config.ESP.UsernameColor = color
-        WindUI:Notify({
-            Title = "Username Color",
-            Content = "Username color changed",
-            Duration = 2
-        })
-    end
-})
-
-TabHandles.Aimbot:Paragraph({
-    Title = "Aimbot Settings",
-    Desc = "Configure your aimbot features",
-    Image = customLogo,
-    ImageSize = 64,
-    Color = Color3.fromHex("#ff3030"),
-})
-
-TabHandles.Aimbot:Divider()
-
-local aimbotToggle = TabHandles.Aimbot:Toggle({
-    Title = "Enable Aimbot",
-    Desc = "Toggle aimbot on/off",
-    Value = Config.Aimbot.Enabled,
-    Callback = function(state) 
-        Config.Aimbot.Enabled = state
-        if not state then
-            AimbotTarget = nil
-        end
-        WindUI:Notify({
-            Title = "Aimbot",
-            Content = state and "Aimbot Enabled" or "Aimbot Disabled",
-            Icon = state and "check" or "x",
-            Duration = 2
-        })
-    end
-})
-
-local fovToggle = TabHandles.Aimbot:Toggle({
-    Title = "Show FOV Circle",
-    Desc = "Toggle FOV circle visibility",
-    Value = Config.Aimbot.ShowFOV,
-    Callback = function(state) 
-        Config.Aimbot.ShowFOV = state
-        if FOVCircle then
-            FOVCircle.Visible = state
-        end
-        WindUI:Notify({
-            Title = "FOV Circle",
-            Content = state and "FOV Circle Enabled" or "FOV Circle Disabled",
-            Icon = state and "check" or "x",
-            Duration = 2
-        })
-    end
-})
-
-local fovSlider = TabHandles.Aimbot:Slider({
-    Title = "FOV Size",
-    Desc = "Adjust aimbot field of view",
-    Value = { Min = 5, Max = 100, Default = Config.Aimbot.FOV },
-    Callback = function(value)
-        Config.Aimbot.FOV = value
-    end
-})
-
-local distanceSlider = TabHandles.Aimbot:Slider({
-    Title = "Max Distance",
-    Desc = "Maximum targeting distance",
-    Value = { Min = 10, Max = 1000, Default = Config.Aimbot.MaxDistance },
-    Callback = function(value)
-        Config.Aimbot.MaxDistance = value
-    end
-})
-
-local targetPart = TabHandles.Aimbot:Dropdown({
-    Title = "Target Part",
-    Values = { "Head", "HumanoidRootPart", "UpperTorso" },
-    Value = Config.Aimbot.TargetPart,
-    Callback = function(option)
-        Config.Aimbot.TargetPart = option
-        WindUI:Notify({
-            Title = "Target Part",
-            Content = "Targeting: "..option,
-            Duration = 2
-        })
-    end
-})
-
-local bigHeadToggle = TabHandles.Aimbot:Toggle({
-    Title = "Big Head",
-    Desc = "Make enemy heads bigger",
-    Value = Config.Aimbot.BigHead.Enabled,
-    Callback = function(state) 
-        Config.Aimbot.BigHead.Enabled = state
-        BigHeadEnabled = state
-        
-        if not state then
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                    pcall(function()
-                        player.Character.Head.Size = Vector3.new(2, 1, 1)
-                        player.Character.Head.Transparency = 0
-                        player.Character.Head.BrickColor = BrickColor.new("Pastel brown")
-                        player.Character.Head.Material = "Plastic"
-                    end)
-                end
-            end
-        end
-        
-        WindUI:Notify({
-            Title = "Big Head",
-            Content = state and "Big Head Enabled" or "Big Head Disabled",
-            Icon = state and "check" or "x",
-            Duration = 2
-        })
-    end
-})
-
-local bigHeadSlider = TabHandles.Aimbot:Slider({
-    Title = "Head Size",
-    Desc = "Adjust head size",
-    Value = { Min = 5, Max = 50, Default = Config.Aimbot.BigHead.Size },
-    Callback = function(value)
-        Config.Aimbot.BigHead.Size = value
-        BigHeadSize = value
-    end
-})
-
-TabHandles.Appearance:Paragraph({
-    Title = "Customize Interface",
-    Desc = "Personalize your experience",
-    Image = customLogo,
-    ImageSize = 64,
-    Color = "White"
-})
-
-local themes = {}
-for themeName, _ in pairs(WindUI:GetThemes()) do
-    table.insert(themes, themeName)
 end
-table.sort(themes)
 
-local themeDropdown = TabHandles.Appearance:Dropdown({
-    Title = "loc:THEME_SELECT",
-    Values = themes,
-    Value = "Dark",
-    Callback = function(theme)
-        WindUI:SetTheme(theme)
-        WindUI:Notify({
-            Title = "Theme Applied",
-            Content = theme,
-            Icon = "palette",
-            Duration = 2
-        })
-    end
-})
 
-local transparencySlider = TabHandles.Appearance:Slider({
-    Title = "loc:TRANSPARENCY",
-    Value = { 
-        Min = 0,
-        Max = 1,
-        Default = 0.50,
-    },
-    Step = 0.1,
-    Callback = function(value)
-        Window:ToggleTransparency(tonumber(value) > 0)
-        WindUI.TransparencyValue = tonumber(value)
-        
-        -- Force refresh UI
-        task.wait(0.1)
-        if Window.Enabled then
-            Window.Enabled = false
-            task.wait(0.1)
-            Window.Enabled = true
-        end
-    end
-})
 
-TabHandles.Config:Paragraph({
-    Title = "Configuration Manager",
-    Desc = "Save and load your settings",
-    Image = customLogo,
-    ImageSize = 64,
-    Color = "White"
-})
-
-local configName = "default"
-
-TabHandles.Config:Input({
-    Title = "Config Name",
-    Value = configName,
-    Callback = function(value)
-        configName = value or "default"
-    end
-})
-
-TabHandles.Config:Button({
-    Title = "Save Configuration",
-    Icon = "save",
-    Variant = "Primary",
-    Callback = function()
-        WindUI:Notify({ 
-            Title = "Configuration", 
-            Content = "Settings saved for " .. playerName .. "!",
-            Icon = "check",
-            Duration = 3
-        })
-    end
-})
-
-TabHandles.Config:Button({
-    Title = "Load Configuration",
-    Icon = "folder",
-    Callback = function()
-        WindUI:Notify({ 
-            Title = "Configuration", 
-            Content = "Settings loaded for " .. playerName .. "!",
-            Icon = "refresh-cw",
-            Duration = 3
-        })
-    end
-})
-
--- APPLY TRANSPARENCY IMMEDIATELY AFTER WINDOW CREATION
-task.spawn(function()
-    task.wait(1)
-    Window:ToggleTransparency(true)
-    WindUI.TransparencyValue = 0.50
+-- */ Using Nebula Icons /* --
+do
+    local NebulaIcons = loadstring(game:HttpGetAsync("https://raw.nebulasoftworks.xyz/nebula-icon-library-loader"))()
     
-    -- Force refresh UI
-    if Window.Enabled then
-        Window.Enabled = false
-        task.wait(0.1)
-        Window.Enabled = true
-    end
-end)
-
--- Main Loop
-RunService.RenderStepped:Connect(function()
-    -- Update FOV Circle
-    if FOVCircle then
-        FOVCircle.Visible = Config.Aimbot.ShowFOV
-        FOVCircle.Radius = (Config.Aimbot.FOV / 2) * (Camera.ViewportSize.Y / 90)
-        FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-        
-        -- Rainbow effect for FOV Circle
-        if Config.ESP.RainbowEnabled and Config.Aimbot.ShowFOV then
-            local hue = (tick() * RainbowSpeed) % 1
-            FOVCircle.Color = Color3.fromHSV(hue, 1, 1)
-        elseif Config.Aimbot.ShowFOV then
-            FOVCircle.Color = Color3.new(1, 1, 1)
-        end
-    end
+    -- Adding icons (e.g. Fluency)
+    WindUI.Creator.AddIcons("fluency",    NebulaIcons.Fluency)
+    --               ^ Icon name          ^ Table of Icons
     
-    -- Update ESP for all players
-    for player, drawings in pairs(ESPDrawings) do
-        UpdateESP(player, drawings)
-    end
+    -- You can also add nebula icons
+    WindUI.Creator.AddIcons("nebula",    NebulaIcons.nebulaIcons)
     
-    -- Aimbot functionality
-    if Config.Aimbot.Enabled then
-        local target = FindAimbotTarget()
-        if target and target.Character and target.Character:FindFirstChild(Config.Aimbot.TargetPart) then
-            AimbotTarget = target
-        else
-            AimbotTarget = nil
-        end
-    else
-        AimbotTarget = nil
-    end
+    -- Usage ↑ ↓
     
-    -- Update Big Head
-    UpdateBigHead()
-end)
-
--- Initialize ESP for all players
-if DrawingLibAvailable then
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            CreateESP(player)
-        end
-    end
-else
-    WindUI:Notify({
-        Title = "Warning",
-        Content = "Drawing library not available. ESP features disabled.",
-        Icon = "alert-triangle",
-        Duration = 5
+    local TestSection = Window:Section({
+        Title = "Custom icons usage test (nebula)",
+        Icon = "nebula:nebula",
     })
 end
-
--- Player added/removed events
-Players.PlayerAdded:Connect(function(player)
-    if DrawingLibAvailable then
-        CreateESP(player)
-    end
-    
-    player.CharacterAdded:Connect(function()
-        if ESPDrawings[player] then
-            for _, drawing in pairs(ESPDrawings[player]) do
-                if drawing and typeof(drawing) == "Instance" then
-                    pcall(function() drawing:Remove() end)
-                end
-            end
-            ESPDrawings[player] = nil
-        end
-        if DrawingLibAvailable then
-            CreateESP(player)
-        end
-    end)
-    
-    player.CharacterRemoving:Connect(function()
-        if ESPDrawings[player] then
-            for _, drawing in pairs(ESPDrawings[player]) do
-                if drawing and typeof(drawing) == "Instance" then
-                    pcall(function() drawing:Remove() end)
-                end
-            end
-            ESPDrawings[player] = nil
-        end
-    end)
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-    if ESPDrawings[player] then
-        for _, drawing in pairs(ESPDrawings[player]) do
-            if drawing and typeof(drawing) == "Instance" then
-                pcall(function() drawing:Remove() end)
-            end
-        end
-        ESPDrawings[player] = nil
-    end
-end)
-
--- UI Toggle
-local UIVisible = true
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.RightShift then
-        UIVisible = not UIVisible
-        Window.Enabled = UIVisible
-    end
-end)
-
--- Welcome Notification
-local function ShowWelcomeNotification()
-    WindUI:Notify({
-        Title = "Script Loaded",
-        Content = "Welcome, " .. displayName .. "! ESP and Aimbot features are ready!",
-        Icon = "check",
-        Duration = 5
-    })
-end
-
-ShowWelcomeNotification()
-warn("✅ Script successfully activated for " .. playerName .. "!")
