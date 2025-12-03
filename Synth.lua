@@ -1,4 +1,4 @@
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/hdbfishwh/SynthorixV2/refs/heads/main/Theme.lua"))()
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/hdbfishwh/SynthorixV2/main/Theme.lua"))()
 
 -- Services
 local Players = game:GetService("Players")
@@ -45,7 +45,7 @@ WindUI:SetTheme("Dark")
 
 -- Create custom logo
 local function CreateCustomLogo()
-    return "rbxassetid://111308654185180"
+    return 111308654185180
 end
 
 local customLogo = CreateCustomLogo()
@@ -64,7 +64,7 @@ end
 
 WindUI:Popup({
     Title = gradient("Synth [Beta]", Color3.fromHex("#6A11CB"), Color3.fromHex("#2575FC")),
-    Icon = "rbxassetid://111308654185180", -- FIXED: Use full format here
+    Icon = 111308654185180, -- Use number format
     Content = "loc:LIB_DESC",
     Buttons = {
         {
@@ -88,7 +88,7 @@ local Config = {
             Color3.new(1, 1, 0),
             Color3.new(1, 0, 0)
         },
-        SnaplineEnabled = true,
+        SnaplineEnabled = false,
         SnaplinePosition = "Center",
         RainbowEnabled = false,
         ShowUsername = true
@@ -102,7 +102,8 @@ local Config = {
         BigHead = {
             Enabled = false,
             Size = 15
-        }
+        },
+        Smoothness = 0.5
     }
 }
 
@@ -111,47 +112,64 @@ local RainbowSpeed = 0.5
 local ESPDrawings = {}
 local BigHeadEnabled = Config.Aimbot.BigHead.Enabled
 local BigHeadSize = Config.Aimbot.BigHead.Size
+local AimbotTarget = nil
+
+-- Check if Drawing library is available
+local DrawingLibAvailable = false
+pcall(function()
+    local test = Drawing.new("Square")
+    test:Remove()
+    DrawingLibAvailable = true
+end)
 
 -- Functions
 local function CreateESP(player)
-    if player == LocalPlayer then return end
+    if player == LocalPlayer or not DrawingLibAvailable then return end
     
-    local drawings = {
-        Box = Drawing.new("Square"),
-        HealthBar = Drawing.new("Square"),
-        Distance = Drawing.new("Text"),
-        Username = Drawing.new("Text"),
-        Snapline = Drawing.new("Line")
-    }
+    local drawings = {}
     
-    for _, drawing in pairs(drawings) do
-        drawing.Visible = false
-        if drawing.Type == "Square" then
-            drawing.Thickness = 2
-            drawing.Filled = false
+    if DrawingLibAvailable then
+        drawings = {
+            Box = Drawing.new("Square"),
+            HealthBar = Drawing.new("Square"),
+            Distance = Drawing.new("Text"),
+            Username = Drawing.new("Text"),
+            Snapline = Drawing.new("Line")
+        }
+        
+        for _, drawing in pairs(drawings) do
+            drawing.Visible = false
+            if drawing.Type == "Square" then
+                drawing.Thickness = 2
+                drawing.Filled = false
+            end
         end
+        
+        drawings.Box.Color = Config.ESP.BoxColor
+        drawings.HealthBar.Filled = true
+        drawings.Distance.Size = 16
+        drawings.Distance.Center = true
+        drawings.Distance.Color = Config.ESP.DistanceColor
+        
+        drawings.Username.Size = 16
+        drawings.Username.Center = true
+        drawings.Username.Color = Config.ESP.UsernameColor
+        drawings.Username.Text = player.Name
+        
+        drawings.Snapline.Color = Config.ESP.BoxColor
     end
-    
-    drawings.Box.Color = Config.ESP.BoxColor
-    drawings.HealthBar.Filled = true
-    drawings.Distance.Size = 16
-    drawings.Distance.Center = true
-    drawings.Distance.Color = Config.ESP.DistanceColor
-    
-    drawings.Username.Size = 16
-    drawings.Username.Center = true
-    drawings.Username.Color = Config.ESP.UsernameColor
-    drawings.Username.Text = player.Name
-    
-    drawings.Snapline.Color = Config.ESP.BoxColor
     
     ESPDrawings[player] = drawings
 end
 
 local function UpdateESP(player, drawings)
-    if not Config.ESP.Enabled or not player.Character then
-        for _, drawing in pairs(drawings) do
-            drawing.Visible = false
+    if not Config.ESP.Enabled or not player.Character or not DrawingLibAvailable then
+        if drawings then
+            for _, drawing in pairs(drawings) do
+                if drawing and typeof(drawing) == "Instance" then
+                    drawing.Visible = false
+                end
+            end
         end
         return
     end
@@ -161,7 +179,9 @@ local function UpdateESP(player, drawings)
     
     if not humanoid or humanoid.Health <= 0 or not head then
         for _, drawing in pairs(drawings) do
-            drawing.Visible = false
+            if drawing and typeof(drawing) == "Instance" then
+                drawing.Visible = false
+            end
         end
         return
     end
@@ -169,7 +189,9 @@ local function UpdateESP(player, drawings)
     local headPos, onScreen = Camera:WorldToViewportPoint(head.Position)
     if not onScreen then
         for _, drawing in pairs(drawings) do
-            drawing.Visible = false
+            if drawing and typeof(drawing) == "Instance" then
+                drawing.Visible = false
+            end
         end
         return
     end
@@ -178,37 +200,48 @@ local function UpdateESP(player, drawings)
     local scale = 1000 / distance
     
     -- Box ESP
-    drawings.Box.Size = Vector2.new(scale, scale * 1.5)
-    drawings.Box.Position = Vector2.new(headPos.X - (scale / 2), headPos.Y - (scale * 0.75))
-    drawings.Box.Visible = true
+    if drawings.Box then
+        drawings.Box.Size = Vector2.new(scale, scale * 1.5)
+        drawings.Box.Position = Vector2.new(headPos.X - (scale / 2), headPos.Y - (scale * 0.75))
+        drawings.Box.Visible = true
+    end
     
     -- Health Bar
-    local healthRatio = humanoid.Health / humanoid.MaxHealth
-    local healthColorIndex = math.clamp(3 - (healthRatio * 2), 1, 3)
-    local healthColor = Config.ESP.HealthGradient[math.floor(healthColorIndex)]:Lerp(
-        Config.ESP.HealthGradient[math.ceil(healthColorIndex)],
-        healthColorIndex % 1
-    )
-    
-    drawings.HealthBar.Size = Vector2.new(4, scale * 1.5 * healthRatio)
-    drawings.HealthBar.Position = Vector2.new(
-        headPos.X + (scale / 2) + 5,
-        (headPos.Y - (scale * 0.75)) + (scale * 1.5 * (1 - healthRatio))
-    )
-    drawings.HealthBar.Color = healthColor
-    drawings.HealthBar.Visible = true
+    if drawings.HealthBar then
+        local healthRatio = humanoid.Health / humanoid.MaxHealth
+        local healthColorIndex = math.clamp(3 - (healthRatio * 2), 1, 3)
+        local floorIndex = math.floor(healthColorIndex)
+        local ceilIndex = math.ceil(healthColorIndex)
+        
+        if Config.ESP.HealthGradient[floorIndex] and Config.ESP.HealthGradient[ceilIndex] then
+            local healthColor = Config.ESP.HealthGradient[floorIndex]:Lerp(
+                Config.ESP.HealthGradient[ceilIndex],
+                healthColorIndex % 1
+            )
+            
+            drawings.HealthBar.Size = Vector2.new(4, scale * 1.5 * healthRatio)
+            drawings.HealthBar.Position = Vector2.new(
+                headPos.X + (scale / 2) + 5,
+                (headPos.Y - (scale * 0.75)) + (scale * 1.5 * (1 - healthRatio))
+            )
+            drawings.HealthBar.Color = healthColor
+            drawings.HealthBar.Visible = true
+        end
+    end
     
     -- Distance
-    drawings.Distance.Text = math.floor(distance) .. "m"
-    drawings.Distance.Position = Vector2.new(headPos.X, headPos.Y + (scale * 0.75) + 10)
-    drawings.Distance.Visible = true
+    if drawings.Distance then
+        drawings.Distance.Text = math.floor(distance) .. "m"
+        drawings.Distance.Position = Vector2.new(headPos.X, headPos.Y + (scale * 0.75) + 10)
+        drawings.Distance.Visible = true
+    end
     
     -- Username
-    if Config.ESP.ShowUsername then
+    if Config.ESP.ShowUsername and drawings.Username then
         drawings.Username.Text = player.Name
         drawings.Username.Position = Vector2.new(headPos.X, headPos.Y - (scale * 0.75) - 20)
         drawings.Username.Visible = true
-    else
+    elseif drawings.Username then
         drawings.Username.Visible = false
     end
     
@@ -216,17 +249,30 @@ local function UpdateESP(player, drawings)
     if Config.ESP.RainbowEnabled then
         local hue = (tick() * RainbowSpeed) % 1
         local rainbowColor = Color3.fromHSV(hue, 1, 1)
-        drawings.Snapline.Color = rainbowColor
-        drawings.Box.Color = rainbowColor
-        drawings.Username.Color = rainbowColor
+        
+        if drawings.Snapline then
+            drawings.Snapline.Color = rainbowColor
+        end
+        if drawings.Box then
+            drawings.Box.Color = rainbowColor
+        end
+        if drawings.Username then
+            drawings.Username.Color = rainbowColor
+        end
     else
-        drawings.Snapline.Color = Config.ESP.BoxColor
-        drawings.Box.Color = Config.ESP.BoxColor
-        drawings.Username.Color = Config.ESP.UsernameColor
+        if drawings.Snapline then
+            drawings.Snapline.Color = Config.ESP.BoxColor
+        end
+        if drawings.Box then
+            drawings.Box.Color = Config.ESP.BoxColor
+        end
+        if drawings.Username then
+            drawings.Username.Color = Config.ESP.UsernameColor
+        end
     end
     
     -- Snapline
-    if Config.ESP.SnaplineEnabled then
+    if Config.ESP.SnaplineEnabled and drawings.Snapline then
         local lineYPosition
         if Config.ESP.SnaplinePosition == "Bottom" then
             lineYPosition = Camera.ViewportSize.Y
@@ -239,7 +285,7 @@ local function UpdateESP(player, drawings)
         drawings.Snapline.From = Vector2.new(headPos.X, headPos.Y + (scale * 0.75))
         drawings.Snapline.To = Vector2.new(Camera.ViewportSize.X / 2, lineYPosition)
         drawings.Snapline.Visible = true
-    else
+    elseif drawings.Snapline then
         drawings.Snapline.Visible = false
     end
 end
@@ -248,6 +294,8 @@ local function FindAimbotTarget()
     local closestTarget = nil
     local closestDistance = math.huge
     local fov = Config.Aimbot.FOV or 30
+    
+    if not LocalPlayer.Character then return nil end
     
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
@@ -260,14 +308,9 @@ local function FindAimbotTarget()
                 local distance = (Camera.CFrame.Position - head.Position).Magnitude
                 
                 if distance <= Config.Aimbot.MaxDistance then
-                    local ray = Ray.new(Camera.CFrame.Position, direction * 500)
-                    local hitPart, _ = workspace:FindPartOnRay(ray, LocalPlayer.Character)
-                    
-                    if hitPart and hitPart:IsDescendantOf(player.Character) then
-                        if distance < closestDistance then
-                            closestDistance = distance
-                            closestTarget = player
-                        end
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestTarget = player
                     end
                 end
             end
@@ -278,12 +321,17 @@ local function FindAimbotTarget()
 end
 
 -- FOV Circle
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Thickness = 2
-FOVCircle.NumSides = 100
-FOVCircle.Filled = false
-FOVCircle.Visible = Config.Aimbot.ShowFOV
-FOVCircle.Color = Color3.new(1, 1, 1)
+local FOVCircle = nil
+if DrawingLibAvailable then
+    pcall(function()
+        FOVCircle = Drawing.new("Circle")
+        FOVCircle.Thickness = 2
+        FOVCircle.NumSides = 100
+        FOVCircle.Filled = false
+        FOVCircle.Visible = Config.Aimbot.ShowFOV
+        FOVCircle.Color = Color3.new(1, 1, 1)
+    end)
+end
 
 -- Big Head Function
 local function UpdateBigHead()
@@ -336,7 +384,7 @@ end
 
 local Window = WindUI:CreateWindow({
     Title = "loc:WINDUI_EXAMPLE",
-    Icon = 111308654185180, -- Use custom logo here
+    Icon = customLogo,
     Author = "loc:WELCOME",
     Folder = "WindUI_Example",
     Size = UDim2.fromOffset(200, 200),
@@ -355,7 +403,7 @@ local Window = WindUI:CreateWindow({
         end
     },
     SideBarWidth = 200,
-    Transparency = 0.50  -- FORCE TRANSPARENCY HERE TOO
+    Transparency = 0.50
 })
 
 Window:CreateTopbarButton("theme-switcher", "moon", function()
@@ -370,7 +418,7 @@ local Tabs = {
     Main = Window:Section({ Title = "loc:FEATURES", Opened = true }),
     Settings = Window:Section({ Title = "loc:SETTINGS", Opened = true }),
     Utilities = Window:Section({ Title = "loc:UTILITIES", Opened = true }),
-    Discord = Window:Section({ Title = "loc:DISCORD", Opened = true }) -- New Discord section
+    Discord = Window:Section({ Title = "loc:DISCORD", Opened = true })
 }
 
 local TabHandles = {
@@ -378,15 +426,15 @@ local TabHandles = {
     Aimbot = Tabs.Main:Tab({ Title = "Aimbot", Icon = "crosshair" }),
     Appearance = Tabs.Settings:Tab({ Title = "loc:APPEARANCE", Icon = "brush" }),
     Config = Tabs.Utilities:Tab({ Title = "loc:CONFIGURATION", Icon = "settings" }),
-    DiscordTab = Tabs.Discord:Tab({ Title = "loc:DISCORD", Icon = "message-circle" }) -- New Discord tab
+    DiscordTab = Tabs.Discord:Tab({ Title = "loc:DISCORD", Icon = "message-circle" })
 }
 
 -- Add a custom logo to the main section
 TabHandles.ESP:Paragraph({
     Title = "ESP Settings",
     Desc = "Configure your ESP features",
-    Image = 111308654185180, -- Use custom logo here
-    ImageSize = 64, -- Larger size for the logo
+    Image = customLogo,
+    ImageSize = 64,
     Color = Color3.fromHex("#30ff6a"),
 })
 
@@ -396,9 +444,9 @@ TabHandles.ESP:Divider()
 TabHandles.DiscordTab:Paragraph({
     Title = "Join Our Community",
     Desc = "loc:DISCORD_DESC",
-    Image = customLogo, -- Use custom logo here too
+    Image = customLogo,
     ImageSize = 64,
-    Color = Color3.fromHex("#5865F2") -- Discord brand color
+    Color = Color3.fromHex("#5865F2")
 })
 
 TabHandles.DiscordTab:Divider()
@@ -429,8 +477,12 @@ local espToggle = TabHandles.ESP:Toggle({
         -- Jika ESP dimatikan, sembunyikan semua drawing
         if not state then
             for _, drawings in pairs(ESPDrawings) do
-                for _, drawing in pairs(drawings) do
-                    drawing.Visible = false
+                if drawings then
+                    for _, drawing in pairs(drawings) do
+                        if drawing and typeof(drawing) == "Instance" then
+                            drawing.Visible = false
+                        end
+                    end
                 end
             end
         end
@@ -451,15 +503,6 @@ local usernameToggle = TabHandles.ESP:Toggle({
     Value = Config.ESP.ShowUsername,
     Callback = function(state) 
         Config.ESP.ShowUsername = state
-        
-        -- Jika username dimatikan, sembunyikan semua username drawing
-        if not state then
-            for _, drawings in pairs(ESPDrawings) do
-                if drawings.Username then
-                    drawings.Username.Visible = false
-                end
-            end
-        end
         
         WindUI:Notify({
             Title = "Username ESP",
@@ -543,7 +586,7 @@ TabHandles.ESP:Colorpicker({
 TabHandles.Aimbot:Paragraph({
     Title = "Aimbot Settings",
     Desc = "Configure your aimbot features",
-    Image = customLogo, -- Use custom logo here
+    Image = customLogo,
     ImageSize = 64,
     Color = Color3.fromHex("#ff3030"),
 })
@@ -556,6 +599,9 @@ local aimbotToggle = TabHandles.Aimbot:Toggle({
     Value = Config.Aimbot.Enabled,
     Callback = function(state) 
         Config.Aimbot.Enabled = state
+        if not state then
+            AimbotTarget = nil
+        end
         WindUI:Notify({
             Title = "Aimbot",
             Content = state and "Aimbot Enabled" or "Aimbot Disabled",
@@ -571,7 +617,9 @@ local fovToggle = TabHandles.Aimbot:Toggle({
     Value = Config.Aimbot.ShowFOV,
     Callback = function(state) 
         Config.Aimbot.ShowFOV = state
-        FOVCircle.Visible = state
+        if FOVCircle then
+            FOVCircle.Visible = state
+        end
         WindUI:Notify({
             Title = "FOV Circle",
             Content = state and "FOV Circle Enabled" or "FOV Circle Disabled",
@@ -592,7 +640,7 @@ local fovSlider = TabHandles.Aimbot:Slider({
 
 local distanceSlider = TabHandles.Aimbot:Slider({
     Title = "Max Distance",
-    Desc = "Don't adjust the distance there a bug",
+    Desc = "Maximum targeting distance",
     Value = { Min = 10, Max = 1000, Default = Config.Aimbot.MaxDistance },
     Callback = function(value)
         Config.Aimbot.MaxDistance = value
@@ -601,7 +649,7 @@ local distanceSlider = TabHandles.Aimbot:Slider({
 
 local targetPart = TabHandles.Aimbot:Dropdown({
     Title = "Target Part",
-    Values = { "Head", "Torso", "HumanoidRootPart" },
+    Values = { "Head", "HumanoidRootPart", "UpperTorso" },
     Value = Config.Aimbot.TargetPart,
     Callback = function(option)
         Config.Aimbot.TargetPart = option
@@ -656,7 +704,7 @@ local bigHeadSlider = TabHandles.Aimbot:Slider({
 TabHandles.Appearance:Paragraph({
     Title = "Customize Interface",
     Desc = "Personalize your experience",
-    Image = 111308654185180, -- Use custom logo here
+    Image = customLogo,
     ImageSize = 64,
     Color = "White"
 })
@@ -687,7 +735,7 @@ local transparencySlider = TabHandles.Appearance:Slider({
     Value = { 
         Min = 0,
         Max = 1,
-        Default = 0.50,  -- Default diubah jadi 0.50
+        Default = 0.50,
     },
     Step = 0.1,
     Callback = function(value)
@@ -707,13 +755,12 @@ local transparencySlider = TabHandles.Appearance:Slider({
 TabHandles.Config:Paragraph({
     Title = "Configuration Manager",
     Desc = "Save and load your settings",
-    Image = 111308654185180, -- Use custom logo here
+    Image = customLogo,
     ImageSize = 64,
     Color = "White"
 })
 
 local configName = "default"
-local configFile = nil
 
 TabHandles.Config:Input({
     Title = "Config Name",
@@ -752,7 +799,7 @@ TabHandles.Config:Button({
 
 -- APPLY TRANSPARENCY IMMEDIATELY AFTER WINDOW CREATION
 task.spawn(function()
-    task.wait(1) -- Tunggu window selesai dibuat
+    task.wait(1)
     Window:ToggleTransparency(true)
     WindUI.TransparencyValue = 0.50
     
@@ -767,16 +814,18 @@ end)
 -- Main Loop
 RunService.RenderStepped:Connect(function()
     -- Update FOV Circle
-    FOVCircle.Visible = Config.Aimbot.ShowFOV
-    FOVCircle.Radius = (Config.Aimbot.FOV / 2) * (Camera.ViewportSize.Y / 90)
-    FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-    
-    -- Rainbow effect for FOV Circle
-    if Config.ESP.RainbowEnabled and Config.Aimbot.ShowFOV then
-        local hue = (tick() * RainbowSpeed) % 1
-        FOVCircle.Color = Color3.fromHSV(hue, 1, 1)
-    elseif Config.Aimbot.ShowFOV then
-        FOVCircle.Color = Color3.new(1, 1, 1)
+    if FOVCircle then
+        FOVCircle.Visible = Config.Aimbot.ShowFOV
+        FOVCircle.Radius = (Config.Aimbot.FOV / 2) * (Camera.ViewportSize.Y / 90)
+        FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+        
+        -- Rainbow effect for FOV Circle
+        if Config.ESP.RainbowEnabled and Config.Aimbot.ShowFOV then
+            local hue = (tick() * RainbowSpeed) % 1
+            FOVCircle.Color = Color3.fromHSV(hue, 1, 1)
+        elseif Config.Aimbot.ShowFOV then
+            FOVCircle.Color = Color3.new(1, 1, 1)
+        end
     end
     
     -- Update ESP for all players
@@ -788,8 +837,12 @@ RunService.RenderStepped:Connect(function()
     if Config.Aimbot.Enabled then
         local target = FindAimbotTarget()
         if target and target.Character and target.Character:FindFirstChild(Config.Aimbot.TargetPart) then
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character[Config.Aimbot.TargetPart].Position)
+            AimbotTarget = target
+        else
+            AimbotTarget = nil
         end
+    else
+        AimbotTarget = nil
     end
     
     -- Update Big Head
@@ -797,30 +850,47 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- Initialize ESP for all players
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer then
-        CreateESP(player)
+if DrawingLibAvailable then
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            CreateESP(player)
+        end
     end
+else
+    WindUI:Notify({
+        Title = "Warning",
+        Content = "Drawing library not available. ESP features disabled.",
+        Icon = "alert-triangle",
+        Duration = 5
+    })
 end
 
 -- Player added/removed events
 Players.PlayerAdded:Connect(function(player)
-    CreateESP(player)
+    if DrawingLibAvailable then
+        CreateESP(player)
+    end
     
     player.CharacterAdded:Connect(function()
         if ESPDrawings[player] then
             for _, drawing in pairs(ESPDrawings[player]) do
-                pcall(function() drawing:Remove() end)
+                if drawing and typeof(drawing) == "Instance" then
+                    pcall(function() drawing:Remove() end)
+                end
             end
             ESPDrawings[player] = nil
         end
-        CreateESP(player)
+        if DrawingLibAvailable then
+            CreateESP(player)
+        end
     end)
     
     player.CharacterRemoving:Connect(function()
         if ESPDrawings[player] then
             for _, drawing in pairs(ESPDrawings[player]) do
-                pcall(function() drawing:Remove() end)
+                if drawing and typeof(drawing) == "Instance" then
+                    pcall(function() drawing:Remove() end)
+                end
             end
             ESPDrawings[player] = nil
         end
@@ -830,7 +900,9 @@ end)
 Players.PlayerRemoving:Connect(function(player)
     if ESPDrawings[player] then
         for _, drawing in pairs(ESPDrawings[player]) do
-            pcall(function() drawing:Remove() end)
+            if drawing and typeof(drawing) == "Instance" then
+                pcall(function() drawing:Remove() end)
+            end
         end
         ESPDrawings[player] = nil
     end
