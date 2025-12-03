@@ -1,10 +1,3 @@
---[[
-
-    WindUI Example (wip)
-    
-]]
-
-
 local WindUI
 
 do
@@ -23,20 +16,16 @@ end
 
 function createPopup()
     return WindUI:Popup({
-        Title = "Welcome to the WindUI!",
+        Title = "Welcome to the Synthorix V5!",
         Icon = "bird",
-        Content = "Hello!",
+        Content = "sorry for the script didn't work the aimbot just patched for some reason",
         Buttons = {
             {
-                Title = "Hahaha",
+                Title = "Oh",
                 Icon = "bird",
             },
             {
-                Title = "Hahaha",
-                Icon = "bird",
-            },
-            {
-                Title = "Hahaha",
+                Title = "I See",
                 Icon = "bird",
             }
         }
@@ -47,8 +36,8 @@ end
 
 -- */  Window  /* --
 local Window = WindUI:CreateWindow({
-    Title = ".ftgs hub  |  WindUI Example",
-    Author = "by .ftgs • Footagesus",
+    Title = "Synthorix V5",
+    Author = "by Rai & Vilo",
     Folder = "ftgshub",
     Icon = "sfsymbols:appleLogo",
     IconSize = 22*2,
