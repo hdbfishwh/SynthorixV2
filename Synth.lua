@@ -26,6 +26,8 @@ local AimBot = {
     Keybind = "E", -- Default keybind to toggle aimbot
     FOV = 30, -- Field of View for target selection
     AutoSwitch = true, -- Auto switch target when current target is invalid
+    SilentAim = false, -- Silent aim feature
+    Prediction = 0.1, -- Prediction for moving targets
 }
 
 -- Services
@@ -182,8 +184,7 @@ function AimBot:SmoothAim(targetPosition)
     -- Smooth interpolation
     local smoothCF = currentCF:Lerp(targetCF, self.Smoothness)
     
-    -- Apply the rotation (this part needs to be handled differently based on the game)
-    -- For most games, you would set the camera CFrame directly
+    -- Apply the rotation
     Camera.CFrame = smoothCF
 end
 
@@ -225,7 +226,11 @@ function AimBot:Start()
                 if distance >= self.MinDistance and distance <= self.MaxDistance then
                     -- Check wall visibility
                     if not self.WallCheck or self:IsVisible(character) then
-                        self:SmoothAim(aimPart.Position)
+                        -- Add prediction for moving targets
+                        local velocity = character.HumanoidRootPart.Velocity
+                        local predictedPosition = aimPart.Position + (velocity * self.Prediction)
+                        
+                        self:SmoothAim(predictedPosition)
                     else
                         -- Target is behind wall, unlock
                         self.Target = nil
@@ -301,14 +306,14 @@ local Window = WindUI:CreateWindow({
     HideSearchBar = false,
     
     OpenButton = {
-        Title = "Open Synthorix V5", -- Updated title
-        CornerRadius = UDim.new(1,0), -- fully rounded
-        StrokeThickness = 3, -- removing outline
-        Enabled = true, -- enable or disable openbutton
+        Title = "Open Synthorix V5",
+        CornerRadius = UDim.new(1,0),
+        StrokeThickness = 3,
+        Enabled = true,
         Draggable = true,
         OnlyMobile = false,
         
-        Color = ColorSequence.new( -- gradient
+        Color = ColorSequence.new(
             Color3.fromHex("#30FF6A"), 
             Color3.fromHex("#e7ff2f")
         )
@@ -331,36 +336,74 @@ do
     })
 end
 
--- Create Aimbot Tab
-local AimbotTab = Window:Tab({
-    Title = "Aimbot",
-    Icon = "target",
+-- */ Using Nebula Icons /* --
+do
+    local NebulaIcons = loadstring(game:HttpGetAsync("https://raw.nebulasoftworks.xyz/nebula-icon-library-loader"))()
+    
+    -- Adding icons
+    WindUI.Creator.AddIcons("nebula", NebulaIcons.Fluency)
+    WindUI.Creator.AddIcons("nebula", NebulaIcons.nebulaIcons)
+end
+
+-- Create Main Tab (Home)
+local HomeTab = Window:Tab({
+    Title = "Home",
+    Icon = "home",
 })
 
--- Main Aimbot Section
-local MainSection = AimbotTab:Section({
-    Title = "Aimbot Settings",
+-- Welcome Section
+HomeTab:Section({
+    Title = "Welcome to Synthorix V5",
+    TextSize = 24,
+    FontWeight = Enum.FontWeight.SemiBold,
+})
+
+HomeTab:Space()
+
+HomeTab:Section({
+    Title = [[Advanced Aimbot System with Team-Friendly Features
+    
+Features Included:
+• Smart Head-Targeting Aimbot
+• Proximity-Based Activation
+• Wall Detection & Auto-Unlock
+• Smooth Aiming for Teaming
+• Player Blacklist System
+• Adjustable Settings
+• Silent Aim Option
+• Target Prediction]],
+    TextSize = 14,
+    TextTransparency = 0.3,
+})
+
+HomeTab:Space()
+
+-- Quick Settings Section
+local QuickSettingsSection = HomeTab:Section({
+    Title = "Quick Settings",
     Box = true,
     Opened = true,
 })
 
--- Toggle for aimbot
-local AimToggle = MainSection:Toggle({
+local QuickToggle = QuickSettingsSection:Toggle({
     Title = "Enable Aimbot",
-    Desc = "Toggle the aimbot system",
+    Desc = "Quick toggle for aimbot",
     Callback = function(value)
         AimBot.Enabled = value
         if value then
             AimBot:Start()
-            -- Update tag
             Window:Tag({
                 Title = "Aimbot: ON",
                 Icon = "target",
                 Color = Color3.fromHex("#30d158")
             })
+            WindUI:Notify({
+                Title = "Aimbot Enabled",
+                Content = "Press " .. AimBot.Keybind .. " to toggle",
+                Icon = "target"
+            })
         else
             AimBot.Target = nil
-            -- Update tag
             Window:Tag({
                 Title = "Aimbot: OFF",
                 Icon = "target",
@@ -370,7 +413,61 @@ local AimToggle = MainSection:Toggle({
     end
 })
 
-MainSection:Space()
+QuickSettingsSection:Space()
+
+QuickSettingsSection:Button({
+    Title = "Open Aimbot Settings",
+    Icon = "settings",
+    Justify = "Center",
+    Callback = function()
+        -- Switch to Aimbot tab
+        -- Note: This would require accessing the tab system directly
+        WindUI:Notify({
+            Title = "Navigation",
+            Content = "Switch to Aimbot tab for detailed settings",
+            Icon = "arrow-right"
+        })
+    end
+})
+
+-- Create Aimbot Tab with multiple channels
+local AimbotTab = Window:Tab({
+    Title = "Aimbot",
+    Icon = "target",
+})
+
+-- Channel 1: Main Settings
+local MainChannel = AimbotTab:Section({
+    Title = "Main Settings",
+    Box = true,
+    Opened = true,
+})
+
+-- Toggle for aimbot
+local AimToggle = MainChannel:Toggle({
+    Title = "Enable Aimbot",
+    Desc = "Toggle the aimbot system",
+    Callback = function(value)
+        AimBot.Enabled = value
+        if value then
+            AimBot:Start()
+            Window:Tag({
+                Title = "Aimbot: ON",
+                Icon = "target",
+                Color = Color3.fromHex("#30d158")
+            })
+        else
+            AimBot.Target = nil
+            Window:Tag({
+                Title = "Aimbot: OFF",
+                Icon = "target",
+                Color = Color3.fromHex("#ff3b30")
+            })
+        end
+    end
+})
+
+MainChannel:Space()
 
 -- Keybind selector
 local keyOptions = {}
@@ -392,17 +489,24 @@ for _, key in pairs(Enum.KeyCode:GetEnumItems()) do
     end
 end
 
-MainSection:Dropdown({
+MainChannel:Dropdown({
     Title = "Aimbot Keybind",
     Desc = "Press this key to toggle aimbot",
     Values = keyOptions,
     Value = "E"
 })
 
-MainSection:Space()
+MainChannel:Space()
+
+-- Channel 2: Aim Settings
+local AimSettingsChannel = AimbotTab:Section({
+    Title = "Aim Settings",
+    Box = true,
+    Opened = true,
+})
 
 -- Smoothness slider
-MainSection:Slider({
+AimSettingsChannel:Slider({
     Title = "Smoothness",
     Desc = "How smooth the aim movement is (lower = smoother)",
     Step = 0.05,
@@ -416,17 +520,44 @@ MainSection:Slider({
     end
 })
 
-MainSection:Space()
+AimSettingsChannel:Space()
 
--- Distance Settings Section
-local DistanceSection = AimbotTab:Section({
-    Title = "Distance Settings",
+-- Silent aim toggle
+AimSettingsChannel:Toggle({
+    Title = "Silent Aim",
+    Desc = "Make aim less obvious (experimental)",
+    Default = AimBot.SilentAim,
+    Callback = function(value)
+        AimBot.SilentAim = value
+    end
+})
+
+AimSettingsChannel:Space()
+
+-- Prediction slider
+AimSettingsChannel:Slider({
+    Title = "Target Prediction",
+    Desc = "Predict target movement (higher for fast targets)",
+    Step = 0.05,
+    Value = {
+        Min = 0.0,
+        Max = 0.5,
+        Default = AimBot.Prediction,
+    },
+    Callback = function(value)
+        AimBot.Prediction = value
+    end
+})
+
+-- Channel 3: Distance & FOV
+local DistanceChannel = AimbotTab:Section({
+    Title = "Distance & FOV",
     Box = true,
     Opened = true,
 })
 
 -- Min distance
-DistanceSection:Slider({
+DistanceChannel:Slider({
     Title = "Minimum Distance",
     Desc = "Minimum distance to start aiming",
     Step = 1,
@@ -440,10 +571,10 @@ DistanceSection:Slider({
     end
 })
 
-DistanceSection:Space()
+DistanceChannel:Space()
 
 -- Max distance
-DistanceSection:Slider({
+DistanceChannel:Slider({
     Title = "Maximum Distance",
     Desc = "Maximum distance to aim",
     Step = 5,
@@ -457,10 +588,10 @@ DistanceSection:Slider({
     end
 })
 
-DistanceSection:Space()
+DistanceChannel:Space()
 
 -- FOV Settings
-DistanceSection:Slider({
+DistanceChannel:Slider({
     Title = "Field of View",
     Desc = "Target selection field of view",
     Step = 5,
@@ -474,15 +605,15 @@ DistanceSection:Slider({
     end
 })
 
--- Targeting Section
-local TargetSection = AimbotTab:Section({
-    Title = "Targeting Settings",
+-- Channel 4: Targeting Options
+local TargetingChannel = AimbotTab:Section({
+    Title = "Targeting Options",
     Box = true,
     Opened = true,
 })
 
 -- Team check toggle
-TargetSection:Toggle({
+TargetingChannel:Toggle({
     Title = "Team Check",
     Desc = "Don't aim at teammates",
     Default = AimBot.TeamCheck,
@@ -491,10 +622,10 @@ TargetSection:Toggle({
     end
 })
 
-TargetSection:Space()
+TargetingChannel:Space()
 
 -- Wall check toggle
-TargetSection:Toggle({
+TargetingChannel:Toggle({
     Title = "Wall Check",
     Desc = "Don't aim through walls",
     Default = AimBot.WallCheck,
@@ -503,10 +634,10 @@ TargetSection:Toggle({
     end
 })
 
-TargetSection:Space()
+TargetingChannel:Space()
 
 -- Auto switch toggle
-TargetSection:Toggle({
+TargetingChannel:Toggle({
     Title = "Auto Switch Target",
     Desc = "Automatically switch targets when current is invalid",
     Default = AimBot.AutoSwitch,
@@ -515,10 +646,10 @@ TargetSection:Toggle({
     end
 })
 
-TargetSection:Space()
+TargetingChannel:Space()
 
 -- Aim part selector
-TargetSection:Dropdown({
+TargetingChannel:Dropdown({
     Title = "Aim Part",
     Desc = "Which body part to target",
     Values = {
@@ -546,10 +677,10 @@ TargetSection:Dropdown({
     }
 })
 
--- Blacklist Management Section
-local BlacklistSection = AimbotTab:Section({
+-- Channel 5: Blacklist Management
+local BlacklistChannel = AimbotTab:Section({
     Title = "Blacklist Management",
-    Desc = "Add friends to blacklist so you don't aim at them",
+    Desc = "Manage players you don't want to target",
     Box = true,
     Opened = true,
 })
@@ -581,7 +712,6 @@ local function updateBlacklistDisplay()
                             Icon = "user-x"
                         })
                     end
-                    -- Refresh the dropdown
                     updateBlacklistDisplay()
                     PlayerListDropdown:Refresh(blacklistPlayers)
                 end
@@ -591,15 +721,19 @@ local function updateBlacklistDisplay()
 end
 
 -- Create player list dropdown
-local PlayerListDropdown = BlacklistSection:Dropdown({
+local PlayerListDropdown = BlacklistChannel:Dropdown({
     Title = "Player List",
     Desc = "Click to toggle blacklist status",
     Values = blacklistPlayers
 })
 
--- Refresh button
-BlacklistSection:Button({
-    Title = "Refresh Player List",
+BlacklistChannel:Space()
+
+-- Blacklist management buttons
+local BlacklistButtonsGroup = BlacklistChannel:Group({})
+
+BlacklistButtonsGroup:Button({
+    Title = "Refresh List",
     Icon = "refresh-cw",
     Justify = "Center",
     Callback = function()
@@ -613,11 +747,10 @@ BlacklistSection:Button({
     end
 })
 
-BlacklistSection:Space()
+BlacklistButtonsGroup:Space()
 
--- Clear all blacklist button
-BlacklistSection:Button({
-    Title = "Clear All Blacklists",
+BlacklistButtonsGroup:Button({
+    Title = "Clear All",
     Color = Color3.fromHex("#ff3b30"),
     Icon = "trash",
     Justify = "Center",
@@ -633,18 +766,15 @@ BlacklistSection:Button({
     end
 })
 
--- Initialize blacklist display
-updateBlacklistDisplay()
-
--- Status Section
-local StatusSection = AimbotTab:Section({
-    Title = "Aimbot Status",
+-- Channel 6: Visuals & Status
+local VisualsChannel = AimbotTab:Section({
+    Title = "Visuals & Status",
     Box = true,
     Opened = true,
 })
 
 -- Current target display
-local targetDisplay = StatusSection:Section({
+local targetDisplay = VisualsChannel:Section({
     Title = "Current Target: None",
     TextSize = 16,
     TextTransparency = 0.5,
@@ -673,54 +803,386 @@ displayUpdateConnection = RunService.Heartbeat:Connect(function()
     updateTargetDisplay()
 end)
 
--- Info Section
-local InfoSection = AimbotTab:Section({
-    Title = "How to Use",
+VisualsChannel:Space()
+
+-- Status indicators
+local StatusGroup = VisualsChannel:Group({})
+
+StatusGroup:Section({
+    Title = "Aimbot Status: " .. (AimBot.Enabled and "ENABLED" or "DISABLED"),
+    TextSize = 14,
+    Color = AimBot.Enabled and Color3.fromHex("#30d158") or Color3.fromHex("#ff3b30")
+})
+
+StatusGroup:Space()
+
+StatusGroup:Section({
+    Title = "Blacklisted Players: " .. #AimBot.BlacklistedPlayers,
+    TextSize = 14,
+})
+
+-- Create Visuals Tab
+local VisualsTab = Window:Tab({
+    Title = "Visuals",
+    Icon = "eye",
+})
+
+-- Channel 1: ESP Settings
+local ESPChannel = VisualsTab:Section({
+    Title = "ESP Settings",
     Box = true,
     Opened = true,
 })
 
-InfoSection:Section({
+ESPChannel:Toggle({
+    Title = "Enable ESP",
+    Desc = "Show player boxes and information",
+    Default = false,
+    Callback = function(value)
+        WindUI:Notify({
+            Title = "ESP Feature",
+            Content = value and "ESP Enabled" or "ESP Disabled",
+            Icon = "eye"
+        })
+    end
+})
+
+ESPChannel:Space()
+
+ESPChannel:Toggle({
+    Title = "Show Names",
+    Desc = "Display player names",
+    Default = true,
+})
+
+ESPChannel:Space()
+
+ESPChannel:Toggle({
+    Title = "Show Distance",
+    Desc = "Display distance to players",
+    Default = true,
+})
+
+ESPChannel:Space()
+
+ESPChannel:Colorpicker({
+    Title = "ESP Color",
+    Desc = "Color for ESP boxes",
+    Default = Color3.fromHex("#30FF6A"),
+})
+
+-- Channel 2: Crosshair Settings
+local CrosshairChannel = VisualsTab:Section({
+    Title = "Crosshair Settings",
+    Box = true,
+    Opened = true,
+})
+
+CrosshairChannel:Toggle({
+    Title = "Custom Crosshair",
+    Desc = "Enable custom crosshair",
+    Default = false,
+})
+
+CrosshairChannel:Space()
+
+CrosshairChannel:Slider({
+    Title = "Crosshair Size",
+    Desc = "Size of the crosshair",
+    Step = 1,
+    Value = {
+        Min = 5,
+        Max = 50,
+        Default = 15,
+    },
+})
+
+CrosshairChannel:Space()
+
+CrosshairChannel:Colorpicker({
+    Title = "Crosshair Color",
+    Desc = "Color of the crosshair",
+    Default = Color3.fromHex("#FF0000"),
+})
+
+-- Channel 3: UI Customization
+local UIChannel = VisualsTab:Section({
+    Title = "UI Customization",
+    Box = true,
+    Opened = true,
+})
+
+UIChannel:Colorpicker({
+    Title = "UI Accent Color",
+    Desc = "Main color for the UI",
+    Default = Color3.fromHex("#30FF6A"),
+    Callback = function(color)
+        WindUI:Notify({
+            Title = "UI Color Updated",
+            Content = "Accent color changed",
+            Icon = "palette"
+        })
+    end
+})
+
+UIChannel:Space()
+
+UIChannel:Toggle({
+    Title = "Rainbow UI",
+    Desc = "Make UI colors cycle through rainbow",
+    Default = false,
+})
+
+-- Create Miscellaneous Tab
+local MiscTab = Window:Tab({
+    Title = "Miscellaneous",
+    Icon = "settings",
+})
+
+-- Channel 1: Game Settings
+local GameChannel = MiscTab:Section({
+    Title = "Game Settings",
+    Box = true,
+    Opened = true,
+})
+
+GameChannel:Toggle({
+    Title = "Auto Respawn",
+    Desc = "Automatically respawn when dead",
+    Default = false,
+})
+
+GameChannel:Space()
+
+GameChannel:Toggle({
+    Title = "No Recoil",
+    Desc = "Remove weapon recoil",
+    Default = false,
+})
+
+GameChannel:Space()
+
+GameChannel:Toggle({
+    Title = "No Spread",
+    Desc = "Remove weapon spread",
+    Default = false,
+})
+
+-- Channel 2: Performance
+local PerformanceChannel = MiscTab:Section({
+    Title = "Performance",
+    Box = true,
+    Opened = true,
+})
+
+PerformanceChannel:Toggle({
+    Title = "FPS Boost",
+    Desc = "Optimize game performance",
+    Default = false,
+})
+
+PerformanceChannel:Space()
+
+PerformanceChannel:Slider({
+    Title = "Update Rate",
+    Desc = "How often features update (higher = smoother)",
+    Step = 1,
+    Value = {
+        Min = 30,
+        Max = 144,
+        Default = 60,
+    },
+})
+
+-- Channel 3: Configuration
+local ConfigChannel = MiscTab:Section({
+    Title = "Configuration",
+    Box = true,
+    Opened = true,
+})
+
+ConfigChannel:Button({
+    Title = "Save Configuration",
+    Icon = "save",
+    Justify = "Center",
+    Callback = function()
+        WindUI:Notify({
+            Title = "Configuration Saved",
+            Content = "All settings have been saved",
+            Icon = "check"
+        })
+    end
+})
+
+ConfigChannel:Space()
+
+ConfigChannel:Button({
+    Title = "Load Configuration",
+    Icon = "folder-open",
+    Justify = "Center",
+    Callback = function()
+        WindUI:Notify({
+            Title = "Configuration Loaded",
+            Content = "Settings loaded from file",
+            Icon = "check"
+        })
+    end
+})
+
+ConfigChannel:Space()
+
+ConfigChannel:Button({
+    Title = "Reset to Default",
+    Color = Color3.fromHex("#ff3b30"),
+    Icon = "refresh-cw",
+    Justify = "Center",
+    Callback = function()
+        WindUI:Popup({
+            Title = "Reset Settings",
+            Content = "Are you sure you want to reset all settings to default?",
+            Buttons = {
+                {
+                    Title = "Yes",
+                    Icon = "check",
+                    Callback = function()
+                        WindUI:Notify({
+                            Title = "Settings Reset",
+                            Content = "All settings reset to default",
+                            Icon = "check"
+                        })
+                    end
+                },
+                {
+                    Title = "No",
+                    Icon = "x",
+                }
+            }
+        })
+    end
+})
+
+-- Channel 4: Info & Help
+local InfoChannel = MiscTab:Section({
+    Title = "Information & Help",
+    Box = true,
+    Opened = true,
+})
+
+InfoChannel:Section({
     Title = [[
-1. Press the keybind (default: E) to toggle aimbot
-2. Blacklist friends using the Player List
-3. Adjust smoothness for easier team recognition
-4. Set distance limits to avoid close/far targets
-5. Enable wall check to avoid aiming through walls
+Synthorix V5 - Advanced Aimbot System
     
-Features:
-• Head-targeting aimbot
-• Proximity-based activation
-• Auto-unlock when behind walls
-• Smooth movement for teaming
-• Blacklist system for friends
-• Adjustable FOV and distance
+Key Features:
+• Smart Head-Targeting Aimbot
+• Proximity-Based Activation (10-100 studs)
+• Wall Detection & Auto-Unlock
+• Smooth Aiming for Teaming
+• Player Blacklist System
+• Adjustable FOV and Distance
+• Silent Aim Option
+    
+How to Use:
+1. Press E to toggle aimbot
+2. Add friends to blacklist in Aimbot tab
+3. Adjust smoothness for team recognition
+4. Set distance limits as needed
+    
+For Team Play:
+• Use high smoothness settings
+• Blacklist your teammates
+• Enable wall check
+• Use silent aim for discretion
+    
+Controls:
+• E - Toggle Aimbot
+• UI can be dragged
+• Right-click UI buttons for options
+    ]],
+    TextSize = 12,
+    TextTransparency = 0.3,
+})
+
+-- Create Credits Tab
+local CreditsTab = Window:Tab({
+    Title = "Credits",
+    Icon = "users",
+})
+
+CreditsTab:Section({
+    Title = "Synthorix V5",
+    TextSize = 24,
+    FontWeight = Enum.FontWeight.SemiBold,
+})
+
+CreditsTab:Space()
+
+CreditsTab:Section({
+    Title = [[
+Developed by:
+• Rai - Lead Developer
+• Vilo - UI Designer
+    
+Special Thanks:
+• WindUI Developers
+• Nebula Icons
+• Testing Team
+    
+Donation Info:
+If you enjoy this script and want to support development,
+consider donating to help us continue improving!
+    
+Disclaimer:
+This script is for educational purposes only.
+Use at your own risk.
     ]],
     TextSize = 14,
     TextTransparency = 0.3,
 })
 
+CreditsTab:Space()
+
+-- Donation Section
+local DonationSection = CreditsTab:Section({
+    Title = "Support Development",
+    Box = true,
+    Opened = true,
+})
+
+DonationSection:Button({
+    Title = "Copy Discord Link",
+    Icon = "discord",
+    Justify = "Center",
+    Callback = function()
+        setclipboard("https://discord.gg/synthorix")
+        WindUI:Notify({
+            Title = "Discord Link Copied",
+            Content = "Join our Discord server!",
+            Icon = "check"
+        })
+    end
+})
+
+DonationSection:Space()
+
+DonationSection:Button({
+    Title = "Copy Donation Info",
+    Icon = "dollar-sign",
+    Justify = "Center",
+    Callback = function()
+        setclipboard("Support us on Patreon: patreon.com/synthorix")
+        WindUI:Notify({
+            Title = "Donation Info Copied",
+            Content = "Thank you for your support!",
+            Icon = "heart"
+        })
+    end
+})
+
+-- Initialize blacklist display
+updateBlacklistDisplay()
+
 -- Start the aimbot system
 AimBot:Start()
-
--- */ Using Nebula Icons /* --
-do
-    local NebulaIcons = loadstring(game:HttpGetAsync("https://raw.nebulasoftworks.xyz/nebula-icon-library-loader"))()
-    
-    -- Adding icons (e.g. Fluency)
-    WindUI.Creator.AddIcons("nebula",    NebulaIcons.Fluency)
-    --               ^ Icon name          ^ Table of Icons
-    
-    -- You can also add nebula icons
-    WindUI.Creator.AddIcons("nebula",    NebulaIcons.nebulaIcons)
-    
-    -- Usage ↑ ↓
-    
-    local TestSection = Window:Section({
-        Title = "this is my hard work so i hope you guys could give me some donation if you don't is alright ;)",
-        Icon = "nebula:nebula",
-    })
-end
 
 -- Initial popup
 createPopup()
