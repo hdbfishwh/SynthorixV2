@@ -114,7 +114,7 @@ do
     local NebulaIcons = loadstring(game:HttpGetAsync("https://raw.nebulasoftworks.xyz/nebula-icon-library-loader"))()
     
     -- Adding icons (e.g. Fluency)
-    WindUI.Creator.AddIcons("fluency",    NebulaIcons.Fluency)
+    WindUI.Creator.AddIcons("nebula",    NebulaIcons.Fluency)
     --               ^ Icon name          ^ Table of Icons
     
     -- You can also add nebula icons
@@ -123,7 +123,7 @@ do
     -- Usage ↑ ↓
     
     local TestSection = Window:Section({
-        Title = "Custom icons usage test (nebula)",
+        Title = "this is my hard work so i hope you guys could give me some donation if you don't is alright ;)",
         Icon = "nebula:nebula",
     })
 end
